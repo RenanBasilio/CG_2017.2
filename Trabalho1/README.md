@@ -12,3 +12,4 @@ O repositório referente ao projeto pode ser encontrado em https://github.com/Re
 * Deslocamento (translação) do segmento de reta a partir do _picking_ da mesma a partir da mesma e pontos próximos.
 * Cálculo de pontos de interseção entre duas retas.
 * Modificador CTRL faz o programa ignorar comandos contextuais e criar uma nova reta.
+* Abilidade de apagar a reta selecionada utilizando a tecla DELETE.

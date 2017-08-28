@@ -1,4 +1,9 @@
 const NEAR_DISTANCE = 5;
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 600;
+const BG_COLOR = 235;
+const LINE_COLOR = 15;
+const CIRCLE_COLOR = 65;
 
 /**
  * This array stores all line segments drawn by the user.
@@ -6,7 +11,7 @@ const NEAR_DISTANCE = 5;
 var linesArray = [];
 /**
  * This dictionary contains all intersections between line segments.
- * The keys are numerical and refer to the index of the intersecting lines in linesArray.
+ * The keys are in the format "xx-yy" and refer to the indexes of the intersecting lines in linesArray.
  */
 var intersectsDict = {};
 
@@ -21,17 +26,17 @@ var lineSelected = {index:-1, region:selectableRegion.NONE}
 
 function setup(){
     // Initialize the WebGL canvas.
-    createCanvas(800, 600, WEBGL);
+    createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT, WEBGL);
 }
 
 function draw(){
     // Clear the canvas to color 235 (grayscale).
-    background(235);
-    fill(color(15));
+    background(BG_COLOR);
+    fill(color(LINE_COLOR));
     // For each line segment in the array, call its draw function.
     linesArray.forEach(function(object){object.draw();});
 
-    fill(color(65));
+    fill(color(CIRCLE_COLOR));
     for(var key in intersectsDict){
         drawCircleGL(intersectsDict[key].x, intersectsDict[key].y, 5, 4, 16);
     }
@@ -101,11 +106,13 @@ function mouseDragged(){
         // Check for intersections with other lines.
         for(var i = 0; i < linesArray.length; i++){
             if(i !== lineSelected.index) {
-                var intersections = linesArray[lineSelected.index].intersects(linesArray[i]);
-                // If an intersection is found, add it to the dictionary.
-                if (intersections[0] == true) {
-                    var key = Math.min(lineSelected.index, i).toString() + "-" + Math.max(lineSelected.index, i).toString();
-                    intersectsDict[key] = intersections[1];
+                if(linesArray[i] !== undefined){
+                    var intersections = linesArray[lineSelected.index].intersects(linesArray[i]);
+                    // If an intersection is found, add it to the dictionary.
+                    if (intersections[0] == true) {
+                        var key = Math.min(lineSelected.index, i).toString() + "-" + Math.max(lineSelected.index, i).toString();
+                        intersectsDict[key] = intersections[1];
+                    }
                 }
             }
         }
@@ -119,20 +126,49 @@ function mouseReleased(){
     }
 }
 
+function keyPressed(){
+    switch (keyCode) {
+        case DELETE:
+            if(lineSelected.index !== -1){
+                // Delete the line from the array of lines.
+                delete linesArray[lineSelected.index];
+                
+                // Clear the intersection store of elements containing the segment being removed.
+                var keys = Object.keys(intersectsDict);
+                var keysForRemoval = keys.filter(function(value){
+                    return (containsSegment(value, lineSelected.index.toString()));
+                }, this);
+                keysForRemoval.forEach(function(element) {
+                    delete intersectsDict[element];
+                }, this);
+
+                // Unselect the currently selected line.
+                lineSelected.index = -1;
+                lineSelected.region = selectableRegion.NONE;
+            }
+            break;
+    
+        default:
+            break;
+    }
+}
+
 function isNearLine(x, y){
     // Loop through the list of lines in reverse order so that a newer line will be found first.
     for(var i = linesArray.length-1; i >= 0; i--){
-        // Check if the line is near the point. If a line is found, return true and set the lineNear variable to reflect the line found.
-        var result = linesArray[i].isNear(x, y, NEAR_DISTANCE);
-        switch (result) {
-            // If the result is NONE, just break.
-            case selectableRegion.NONE:
-                break;
-            // For any other result, a match was found, so set the globals and return true.
-            default:
-                lineNear.index = i;
-                lineNear.region = result;
-                return true;
+        if (linesArray[i] !== undefined){
+            // Check if the line is near the point. If a line is found, return true and set the lineNear variable to reflect the line found.
+            var result = linesArray[i].isNear(x, y, NEAR_DISTANCE);
+            switch (result) {
+                // If the result is NONE, just break.
+                case selectableRegion.NONE:
+                    break;
+                // For any other result, a match was found, so set the globals and return true.
+                default:
+                    lineNear.index = i;
+                    lineNear.region = result;
+                    return true;
+            }
         }
     }
     // If no match was found, return false.
