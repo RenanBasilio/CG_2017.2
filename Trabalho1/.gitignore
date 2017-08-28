@@ -1,2 +1,6 @@
-# External Libraries
-libs/p5/
+# Ignore all external library derectories
+libs/**/*
+
+# But not subdirectories or README
+!*/
+!README.md
