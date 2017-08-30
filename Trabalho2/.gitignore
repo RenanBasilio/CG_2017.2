@@ -1,0 +1,2 @@
+# Ignore all external library directories
+node_modules/**
