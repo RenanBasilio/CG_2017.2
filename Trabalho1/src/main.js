@@ -33,8 +33,8 @@ function draw(){
     // Clear the canvas to color 235 (grayscale).
     background(BG_COLOR);
     fill(color(LINE_COLOR));
-    // For each line segment in the array, call its draw function.
-    linesArray.forEach(function(object){object.draw();});
+    // For each line segment in the array, call the draw segment function with it as parameter.
+    linesArray.forEach(function(object){drawSegment(object);});
 
     fill(color(CIRCLE_COLOR));
     for(var key in intersectsDict){

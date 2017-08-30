@@ -151,14 +151,6 @@ class LineSegment2D{
         //print("Found intersection at ("+intersectX+", "+intersectY+")");
         return result;
     }
-    /**
-     * Draws the line segment in the current GL context.
-     */
-    draw(){
-        line(this.startpoint.x, this.startpoint.y, 0.0,
-            this.endpoint.x, this.endpoint.y, 0.0);
-    }
-
 }
 
 /**
@@ -172,36 +164,4 @@ class LineSegment2D{
 function computeLength(x1, y1, x2, y2){
     length = Math.sqrt(Math.pow((x2-x1), 2)+Math.pow((y2-y1), 2));
     return length;
-}
-
-/**
- * Draws a circle using a GL triangle strip.
- * 
- * The method calculates vertices using the parametric equations
- * 
- *      x = x0 + r*cosT
- *      y = y0 + r*sinT
- * 
- * in pairs that the first corresponds to a vertice in the inner circle and the other 
- * to one in the outer circle, feeding them into the rendere in succession to draw a
- * circle at the position specified.
- * @param {*} centerX The location in the X axis to draw the center of the circle.
- * @param {*} centerY The location in the Y axis to draw the center of the circle.
- * @param {*} radius  The radius of the circle.
- * @param {*} strokeWidth The distance from the inner radius to the outer radius, in pixels.
- * @param {*} resolution The resolution of the circle. This is how many pairs of vertices to calculate for rendering.
- * 
- */
-function drawCircleGL(centerX, centerY, radius, strokeWidth, resolution){
-    res = 360/resolution;
-    innerRad = radius-(strokeWidth/2);
-    outerRad = radius+(strokeWidth/2);
-    beginShape(TRIANGLE_STRIP);
-        for(var i = 0.0; i <= 360; i+=res)
-            {
-                angle = (PI*i)/180;
-                vertex(centerX+innerRad*cos(angle), centerY+innerRad*sin(angle), 0.0);
-                vertex(centerX+outerRad*cos(angle), centerY+outerRad*sin(angle), 0.0);
-            }
-    endShape();
 }
