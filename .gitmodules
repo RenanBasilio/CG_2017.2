@@ -1,0 +1,3 @@
+[submodule "Trabalho2/libs/threejs"]
+	path = Trabalho2/libs/threejs
+	url = https://github.com/mrdoob/three.js
