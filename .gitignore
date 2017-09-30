@@ -1,2 +1,5 @@
 # User-Specific Configuration Files
 .vscode
+
+# Archives for Submission to Moodle
+*.zip
