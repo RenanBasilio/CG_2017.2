@@ -1,3 +1,4 @@
+
 var state = Object.freeze({
     IDLE: 0,
     DRAWING: 1

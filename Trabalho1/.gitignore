@@ -1,4 +1,4 @@
-# Ignore all external library derectories
+# Ignore all external library directories
 libs/**/*
 
 # But not subdirectories or README
