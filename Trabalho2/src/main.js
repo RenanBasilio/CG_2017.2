@@ -4,15 +4,15 @@ var state = Object.freeze({
     DRAWING: 1
 });
 
-var MAX_POINTS = 50;
-
 var currState = state.IDLE;
+
+var geometriesArray = [];
 var currGeometry = null;
 
 var scene = new THREE.Scene();
 
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 500);
-camera.position.set(0, 0, 100);
+camera.position.set(0, 0, 200);
 camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 var renderer = new THREE.WebGLRenderer();
@@ -20,40 +20,6 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0xfafafa, 1);
 
 document.body.appendChild(renderer.domElement);
-
-
-function computeLength(x1, y1, x2, y2){
-    length = Math.sqrt(Math.pow((x2-x1), 2)+Math.pow((y2-y1), 2));
-    return length;
-}
-
-class LineChain{
-    constructor(){
-        this.geometry = new THREE.BufferGeometry();
-
-        this.positions = new Float32Array( MAX_POINTS * 3 ); // 3 vertices per point
-        this.geometry.addAttribute( 'position', new THREE.BufferAttribute( this.positions, 3 ) );
-        
-        this.drawCount = 0;
-        this.geometry.setDrawRange( 0, this.drawCount );
-        
-        this.material = new THREE.LineBasicMaterial( { color: 0x060606, linewidth: 2 } );
-        
-        this.line = new THREE.Line( this.geometry,  this.material );
-        scene.add( this.line );
-
-        this.nextIndex = 0;        
-    }
-    addVertice(x, y){
-        var positions = this.line.geometry.attributes.position.array;
-        positions[this.nextIndex++] = x;
-        positions[this.nextIndex++] = y;
-        positions[this.nextIndex++] = 0.;
-        this.drawCount++;
-        this.geometry.setDrawRange(0, this.drawCount);
-        this.line.geometry.attributes.position.needsUpdate = true;
-    }
-} 
 
 function getMousePosition(){
     var vector = new THREE.Vector3();
@@ -71,30 +37,65 @@ function getMousePosition(){
     
     var pos = camera.position.clone().add( dir.multiplyScalar( distance ) );
 
-    console.log(pos);
     return pos;
 }
 
-var geometriesArray = [];
-
-function onMouseDown(event)
-{
+function onMouseDown(event){
+    // Get the mouse position in canvas coordinates.
     var mouse = getMousePosition();
+    
+    // Switch on main state machine.
     switch (currState) {
+        // If the state is IDLE (Default)
         case state.IDLE:
-            currState = state.DRAWING;
-            currGeometry = new LineChain();
-            currGeometry.addVertice(mouse.x, mouse.y);
+            // If selected an empty space
+            if (true){
+                // Set state to DRAWING to draw the shape with subsequent commands.
+                currState = state.DRAWING;
+
+                // Initialize a line chain geometry and set it as current.
+                currGeometry = new LineChain(mouse.x, mouse.y);
+
+                // Add the line chain to the geometries array and to the scene.
+                geometriesArray.push[currGeometry];
+                scene.add( currGeometry.line );
+            }
             break;
+        // If the state is DRAWING
         case state.DRAWING:
+            // Try to add the current mouse position as a vertice to the line chain currently being edited.
             currGeometry.addVertice(mouse.x, mouse.y);
-            if(currGeometry.isClosed) {currState = state.IDLE;}
+            // If the line chain is closed, convert it to a mesh and set the state back to idle.
+            if(currGeometry.isClosed) {
+                try {
+                    var newMesh = lineChainToMesh(currGeometry);
+                    scene.remove(currGeometry.line);
+                    scene.add(newMesh);
+                    currState = state.IDLE;
+                } catch (error) {
+                    console.log("Failed to create Mesh.");
+                    // To-Do: Allow 'fixing' non convex polygons by undoing the last vertice with right click.
+                }
+            }
             break;
         default:
             break;
     }
 }
+
+function onMouseMove(event){
+    var mouse = getMousePosition();
+    switch (currState){
+        case state.DRAWING:
+            currGeometry.moveLastVertice(mouse.x, mouse.y);
+            break;
+        default:
+            break;
+    }
+}
+
 document.addEventListener( 'mousedown', onMouseDown, false ); 
+document.addEventListener( 'mousemove', onMouseMove, false );
 
 function animate() {
     requestAnimationFrame( animate );
