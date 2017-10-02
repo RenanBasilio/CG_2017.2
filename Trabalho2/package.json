@@ -4,13 +4,15 @@
   "description": "Segundo Trabalho de Computação Gráfica 2017-2",
   "main": "main.js",
   "dependencies": {
+    "http-server": "^0.10.0",
     "lr-http-server": "^0.1.5",
     "three": "^0.87.1"
   },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "lr-http-server"
+    "dev-server": "lr-http-server",
+    "start": "http-server"
   },
   "author": "Renan Basilio",
   "license": "ISC"
