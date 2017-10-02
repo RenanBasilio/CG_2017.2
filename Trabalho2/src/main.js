@@ -44,6 +44,7 @@ var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0xfafafa, 1);
 
+renderer.domElement.setAttribute('oncontextmenu', "return false;");
 document.body.appendChild(renderer.domElement);
 
 ////////////////////////// Mouse Position Operations ///////////////////////
