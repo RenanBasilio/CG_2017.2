@@ -1,19 +1,36 @@
-
+/**
+ * Enumerates the states of the main state machine process.
+ */
 var state = Object.freeze({
     IDLE: 0,
     DRAWING: 1,
     MOVE_MESH: 2
 });
 
+/**
+ * Enumerates mouse buttons as presented by event.which
+ */
 var mouseButton = Object.freeze({
     LEFT: 1,
     MIDDLE: 2,
     RIGHT: 3
 })
 
+/**
+ * The current state of the state machine.
+ */
 var currState = state.IDLE;
 
+/**
+ * The geometry currently selected (null if none).
+ */
 var currGeometry = null;
+
+var geometries = [];
+var pins = [];
+var pinId = [];
+
+////////////////////////// THREE.js Initializations ////////////////////////////
 
 var scene = new THREE.Scene();
 
@@ -28,6 +45,8 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0xfafafa, 1);
 
 document.body.appendChild(renderer.domElement);
+
+////////////////////////// Mouse Position Operations ///////////////////////
 
 var mouse = new THREE.Vector2(0., 0.);
 var mouseLast = new THREE.Vector2(0., 0.);
@@ -125,12 +144,62 @@ function onMouseDown(event){
     if (event.type === "dblclick" || event.which === mouseButton.RIGHT)
     {
         // Check if double click was from idle (new geometry with only one point)
-        if (currGeometry.nextIndex === 3)
+        if (currGeometry === null || currGeometry.nextIndex === 3)
         {
-            // Remove mistakenly created geometry
-            scene.remove(currGeometry.line);
-            currGeometry.dispose();
-            delete currGeometry;
+            if(currGeometry !== null){
+                // Remove mistakenly created geometry
+                scene.remove(currGeometry.line);
+                currGeometry.dispose();
+                delete currGeometry;
+            }
+
+            // Raycast mesh intersection
+            raycaster.setFromCamera( mouse, camera );
+
+            // First check for pin intersections
+            var intersects = raycaster.intersectObjects( pins );
+            if (intersects.length > 0)
+            {
+                // Find the index of the pin in the pin array
+                var index = pins.indexOf(intersects[0].object);
+                // Find the child pinned by the pin within the parent's list
+                var child = intersects[0].object.parent.children[pinId[index]];
+                var parent = intersects[0].object.parent;
+                
+                // Remove the pin mesh from the parent
+                parent.remove(intersects[0].object);
+
+                // If parent isn't already the scene
+                if(parent !== scene){
+                    // Remove the child from the parent
+                    parent.remove(child);
+
+                    // Parent the child to the scene
+                    scene.add(child);
+                }
+                
+                // Operation was pin removal, so return.
+                return;
+            }
+
+            // Check for mesh intersections
+            var intersects = raycaster.intersectObjects( geometries );
+            if (intersects.length > 1){
+                var pin = pinToParent(mouseOnCanvas, intersects[0].object, intersects[1].object);
+                pins.push(pin);
+                pinId.push(intersects[0].object.children.length-1);
+                console.log(intersects[0].object);
+
+                // Operation was pin placement, so return.
+                return;
+            }
+            else if (intersects.length === 1){
+                var pin = pinToParent(mouseOnCanvas, scene, intersects[0].object);
+                pins.push(pin);
+
+                // Operation was pin placement, so return.
+                return;
+            }
 
         }
     }
@@ -148,12 +217,15 @@ function onMouseDown(event){
 
                         // Raycast mesh intersection
                         raycaster.setFromCamera( mouse, camera );
-                        var intersects = raycaster.intersectObjects( scene.children );
+                        var intersects = raycaster.intersectObjects( geometries );
 
                         // If a mesh was selected
                         if(intersects.length > 0)
                         {
+                            // Change state to move the selected mesh
                             currState = state.MOVE_MESH;
+                            // Change currently selected geometry to the top (last) mesh
+                            // in the list of meshes returned by the raycaster.
                             currGeometry = intersects[intersects.length-1].object;
                         }
 
@@ -183,11 +255,12 @@ function onMouseDown(event){
                         var newMesh = lineChainToMesh(currGeometry);
                         scene.remove(currGeometry.line);
                         currGeometry = null;
+                        geometries.push(newMesh);
                         scene.add(newMesh);
                         currState = state.IDLE;
                     } catch (error) {
                         console.log("Failed to create Mesh.");
-                        // To-Do: Allow 'fixing' non convex polygons by undoing the last vertice with right click.
+                        // TODO: Allow 'fixing' non convex polygons by undoing the last vertice with right click.
                     }
                 }
                 break;

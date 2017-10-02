@@ -125,3 +125,17 @@ function lineChainToMesh(lineChain){
     // Return the newly created mesh object
     return mesh;
 }
+
+function pinToParent(position, parent, child){
+    // Create circle mesh
+    var circleGeometry = new THREE.CircleBufferGeometry(1.25, 32);
+    var circleMaterial = new THREE.MeshBasicMaterial({color: 0x202020})
+    var pinMesh = new THREE.Mesh(circleGeometry, circleMaterial);
+    pinMesh.translateX(position.x);
+    pinMesh.translateY(position.y);
+
+    parent.add(pinMesh);
+    parent.add(child);
+
+    return pinMesh;
+}
