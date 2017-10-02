@@ -2,7 +2,13 @@
 <html>
     <head>
         <title>Trabalho 2: Forward Kinematics</title>
-        <script type="text/javascript" src="node_modules/three/build/three.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/87/three.js"></script>
+        <script>
+            if (!window.THREE){
+                document.write('<script type=\"text\/javascript\" src=\"node_modules\/three\/build\/three.js\"><\/script>');
+                console.warn("Failed to load from CDN. Using local copy instead");
+            }
+        </script>
         <script type="text/javascript" src="src/util.js"></script>
         <script type="text/javascript" src="src/geometry.js"></script>
         <style>
