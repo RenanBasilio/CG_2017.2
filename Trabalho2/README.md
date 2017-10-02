@@ -7,7 +7,7 @@ O projeto for realizado utilizando a biblioteca three.js. Para executar, execute
 npm install
 npm start
 ~~~
-O projeto estará disponível na em http://localhost:8080
+O projeto estará disponível em http://localhost:8080
 
 O repositório referente ao projeto pode ser encontrado em https://github.com/RenanBasilio/CG_2017.2
 
