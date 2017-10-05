@@ -32,6 +32,7 @@ var pinGeometries = [];
 ////////////////////////// THREE.js Initializations ////////////////////////////
 
 var scene = new THREE.Scene();
+scene.userData = { objectType: objType.SCENE };
 
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 500);
 camera.position.set(0, 0, 200);
@@ -119,21 +120,41 @@ function getMouseDeltaOnCanvas(){
 
 ////////////////////////// Functionality Methods ////////////////////////////
 
-function getPinsNearMouse(mouse)
-{
-    var nearPins = [];
-    var mouseOnCanvas = getMousePositionOnCanvas(mouse);
-    pinGeometries.forEach(function(element) {
-        if(element !== undefined){
-            // TODO: Apply world matrix of each pin to the mouse position.
-            console.log(mouseOnCanvas.x + ", " + mouseOnCanvas.y + "\n" + element.position.x + ", " + element.position.y);
-            if(computeLength(mouseOnCanvas.x, mouseOnCanvas.y, element.position.x, element.position.y) < 2){
-                nearPins.push(element);
-            }
+/**
+ * Recursive method that finds an object or any child under that is a pin located near the position.
+ * @param {THREE.Object3D} element The object to analize.
+ * @param {THREE.Vector3} position The position to analize.
+ * @return {THREE.Object3D} The first pin found near the mouse. Undefined if none is found.
+ */
+function isPinNearPosition(element, position){
+    // If this element is a pin && it is near the mouse, return it.
+    if( element.userData.objectType === objType.PIN &&
+        computeLength(position.x, position.y, element.position.x, element.position.y) < 2){
+            return element;
         }
-    }, this);
-    console.log(nearPins);
-    return nearPins;
+    // Else, enter recursion loop.
+    else{
+        // If this element has children
+        if(element.children.length > 0){
+            // Iterate through its children
+            for(var i = 0; i < element.children.length; i++)
+            {
+                // Call method to verify if the child is a pin near the mouse.
+                position.applyMatrix4(element.matrix);
+                var result = isPinNearPosition(element.children[i], position);
+                // If so, return the child.
+                if(result !== undefined)
+                {
+                    return result;
+                }
+            }
+            // If no child is found that has a pin underneath it, return undefined.
+            return undefined;
+        }
+        // If the element has no children, return undefined.
+        else return undefined;
+    }
+
 }
 
 ////////////////////////// Mouse Event Handlers ////////////////////////////
@@ -174,11 +195,10 @@ function onMouseDown(event){
             }
 
             // First check for pin intersections
-            var intersects = getPinsNearMouse(mouse);
-            if (intersects.length > 0)
+            var pin = isPinNearPosition(scene, mouseOnCanvas);
+            if (pin !== undefined)
             {
-                removePin(intersects[0]);
-                console.log(pinGeometries);
+                removePin(pin, scene);
 
                 // Operation was pin removal, so return.
                 return;
@@ -191,15 +211,14 @@ function onMouseDown(event){
             var intersects = raycaster.intersectObjects( geometries );
             if (intersects.length > 1){
                 var pin = pinToParent(mouseOnCanvas, intersects[0].object, intersects[1].object);
-                pinGeometries.push(pin);
 
                 // Operation was pin placement, so return.
                 return;
             }
             else if (intersects.length === 1){
                 var pin = pinToParent(mouseOnCanvas, scene, intersects[0].object);
-                pinGeometries.push(pin);
                 
+                console.log(scene);
                 // Operation was pin placement, so return.
                 return;
             }

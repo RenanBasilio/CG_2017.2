@@ -3,8 +3,9 @@ var MAX_POINTS = 50
 
 // This enum differentiates the type of object a specific mesh can be
 var objType = Object.freeze({
-    POLYGON: 0,
-    PIN: 1
+    SCENE: 0,
+    POLYGON: 1,
+    PIN: 2
 })
 
 /**
@@ -140,10 +141,11 @@ function lineChainToMesh(lineChain){
  * @param {THREE.Mesh} parent The mesh to use as parent for the pin.
  * @param {THREE.Mesh} child The mesh to use as child to the pin.
  * @param {Number} pinRadius The radius of the circle drawn to indicate the pin. Default is 2.
- * @param {Number} pinResolution The resolution (in triangles) of the circle drawn to indicate the pin. Default is 16.
+ * @param {Number} pinResolution The resolution (in triangles) of the circle drawn to indicate the pin. Default is 32.
  * @return {Mesh} The pin created to bind the meshes.
  */
-function pinToParent(position, parent, child, pinRadius = 2, pinResolution = 16){
+function pinToParent(position, parent, child, pinRadius = 2, pinResolution = 32){
+
     // Create circle mesh
     var circleGeometry = new THREE.CircleBufferGeometry(pinRadius, pinResolution);
     var circleMaterial = new THREE.MeshBasicMaterial({color: 0x202020});
@@ -169,9 +171,10 @@ function removePin(pin, scene){
     var child = pin.children[0];
 
     //TODO: Apply world matrix to child before removing pin
+    child.matrixWorld.applyToBufferAttribute(child.geometry.vertices);
+    child.geometry.verticesNeedUpdate = true;
+
     parent.remove(pin);
     pin.remove(child);
     scene.add(child);
-
-    delete pin;
 }
