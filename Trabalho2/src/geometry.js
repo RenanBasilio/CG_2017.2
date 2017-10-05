@@ -1,6 +1,12 @@
 // Max line size constant
 var MAX_POINTS = 50
 
+// This enum differentiates the type of object a specific mesh can be
+var objType = Object.freeze({
+    POLYGON: 0,
+    PIN: 1
+})
+
 /**
  * This class handles a chain of lines and all operations regarding addition, removal
  * or manipulation of the individual vertices in one.
@@ -106,7 +112,7 @@ function lineChainToMesh(lineChain){
     // Convert the position array into a vector3 array
     for(var i = 0; i < lineChain.nextIndex/3; i++)
     {
-        geometry.vertices.push(new THREE.Vector3(lineChain.positions[3*i], lineChain.positions[(3*i)+1], 0.))
+        geometry.vertices.push(new THREE.Vector3(lineChain.positions[3*i], lineChain.positions[(3*i)+1], 0.));
     }
     var holes = [];
 
@@ -121,21 +127,51 @@ function lineChainToMesh(lineChain){
 
     // Create the mesh using the computed geometry
     var mesh = new THREE.Mesh(geometry);
-
+    mesh.userData = { objectType: objType.POLYGON };
+    console.log(mesh);
+    
     // Return the newly created mesh object
     return mesh;
 }
 
-function pinToParent(position, parent, child){
+/**
+ * This method binds two meshes by assigning them as parent and child of a pin object.
+ * @param {{x, y}} position The position of the pin.
+ * @param {THREE.Mesh} parent The mesh to use as parent for the pin.
+ * @param {THREE.Mesh} child The mesh to use as child to the pin.
+ * @param {Number} pinRadius The radius of the circle drawn to indicate the pin. Default is 2.
+ * @param {Number} pinResolution The resolution (in triangles) of the circle drawn to indicate the pin. Default is 16.
+ * @return {Mesh} The pin created to bind the meshes.
+ */
+function pinToParent(position, parent, child, pinRadius = 2, pinResolution = 16){
     // Create circle mesh
-    var circleGeometry = new THREE.CircleBufferGeometry(1.25, 32);
-    var circleMaterial = new THREE.MeshBasicMaterial({color: 0x202020})
+    var circleGeometry = new THREE.CircleBufferGeometry(pinRadius, pinResolution);
+    var circleMaterial = new THREE.MeshBasicMaterial({color: 0x202020});
     var pinMesh = new THREE.Mesh(circleGeometry, circleMaterial);
+    pinMesh.userData = { objectType: objType.PIN };
+
     pinMesh.translateX(position.x);
     pinMesh.translateY(position.y);
 
     parent.add(pinMesh);
-    parent.add(child);
+    pinMesh.add(child);
 
     return pinMesh;
+}
+
+/**
+ * This method removes a pin, releasing the meshes bound by it and parenting the child back to the scene.
+ * @param {THREE.Mesh} pin The pin to remove.
+ * @param {THREE.Scene} scene The scene object to parent the released mesh to.
+ */
+function removePin(pin, scene){
+    var parent = pin.parent;
+    var child = pin.children[0];
+
+    //TODO: Apply world matrix to child before removing pin
+    parent.remove(pin);
+    pin.remove(child);
+    scene.add(child);
+
+    delete pin;
 }

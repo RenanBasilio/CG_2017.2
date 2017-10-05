@@ -27,8 +27,7 @@ var currState = state.IDLE;
 var currGeometry = null;
 
 var geometries = [];
-var pins = [];
-var pinId = [];
+var pinGeometries = [];
 
 ////////////////////////// THREE.js Initializations ////////////////////////////
 
@@ -117,7 +116,27 @@ function getMouseDeltaOnCanvas(){
     return delta;
 }
 
-////////////////////////// Mouse Event Handlers /////////////////////////
+
+////////////////////////// Functionality Methods ////////////////////////////
+
+function getPinsNearMouse(mouse)
+{
+    var nearPins = [];
+    var mouseOnCanvas = getMousePositionOnCanvas(mouse);
+    pinGeometries.forEach(function(element) {
+        if(element !== undefined){
+            // TODO: Apply world matrix of each pin to the mouse position.
+            console.log(mouseOnCanvas.x + ", " + mouseOnCanvas.y + "\n" + element.position.x + ", " + element.position.y);
+            if(computeLength(mouseOnCanvas.x, mouseOnCanvas.y, element.position.x, element.position.y) < 2){
+                nearPins.push(element);
+            }
+        }
+    }, this);
+    console.log(nearPins);
+    return nearPins;
+}
+
+////////////////////////// Mouse Event Handlers ////////////////////////////
 
 function onMouseMove(event){
     updateMousePosition(event);
@@ -127,7 +146,6 @@ function onMouseMove(event){
             currGeometry.moveLastVertice(mouseOnCanvas.x, mouseOnCanvas.y);
             break;
         case state.MOVE_MESH:
-            console.log(event);
             var mouseDelta = getMouseDeltaOnCanvas();
             currGeometry.translateX(mouseDelta.x);
             currGeometry.translateY(mouseDelta.y);
@@ -152,52 +170,36 @@ function onMouseDown(event){
                 scene.remove(currGeometry.line);
                 currGeometry.dispose();
                 delete currGeometry;
+                currState = state.IDLE;
+            }
+
+            // First check for pin intersections
+            var intersects = getPinsNearMouse(mouse);
+            if (intersects.length > 0)
+            {
+                removePin(intersects[0]);
+                console.log(pinGeometries);
+
+                // Operation was pin removal, so return.
+                return;
             }
 
             // Raycast mesh intersection
             raycaster.setFromCamera( mouse, camera );
 
-            // First check for pin intersections
-            var intersects = raycaster.intersectObjects( pins );
-            if (intersects.length > 0)
-            {
-                // Find the index of the pin in the pin array
-                var index = pins.indexOf(intersects[0].object);
-                // Find the child pinned by the pin within the parent's list
-                var child = intersects[0].object.parent.children[pinId[index]];
-                var parent = intersects[0].object.parent;
-                
-                // Remove the pin mesh from the parent
-                parent.remove(intersects[0].object);
-
-                // If parent isn't already the scene
-                if(parent !== scene){
-                    // Remove the child from the parent
-                    parent.remove(child);
-
-                    // Parent the child to the scene
-                    scene.add(child);
-                }
-                
-                // Operation was pin removal, so return.
-                return;
-            }
-
             // Check for mesh intersections
             var intersects = raycaster.intersectObjects( geometries );
             if (intersects.length > 1){
                 var pin = pinToParent(mouseOnCanvas, intersects[0].object, intersects[1].object);
-                pins.push(pin);
-                pinId.push(intersects[0].object.children.length-1);
-                console.log(intersects[0].object);
+                pinGeometries.push(pin);
 
                 // Operation was pin placement, so return.
                 return;
             }
             else if (intersects.length === 1){
                 var pin = pinToParent(mouseOnCanvas, scene, intersects[0].object);
-                pins.push(pin);
-
+                pinGeometries.push(pin);
+                
                 // Operation was pin placement, so return.
                 return;
             }
@@ -261,7 +263,7 @@ function onMouseDown(event){
                         currState = state.IDLE;
                     } catch (error) {
                         console.log("Failed to create Mesh.");
-                        // TODO: Allow 'fixing' non convex polygons by undoing the last vertice with right click.
+                        // TODO: Allow 'fixing' complex polygons by undoing the last vertice with right click.
                     }
                 }
                 break;
@@ -291,6 +293,7 @@ document.addEventListener( 'mousedown', onMouseDown, false );
 document.addEventListener( 'mousemove', onMouseMove, false );
 document.addEventListener( 'dblclick', onMouseDown, false );
 document.addEventListener( 'mouseup', onMouseUp, false);
+
 
 ////////////////////////// THREE Animation Loop /////////////////////////////
 
