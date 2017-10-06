@@ -156,12 +156,21 @@ function pinToParent(position, parent, child, pinRadius = 2, pinResolution = 32)
     pinMesh.translateY(position.y);
     pinMesh.updateMatrixWorld();
 
+    // Apply any previous changes to the child
+    child.geometry.vertices.forEach(function(element) {
+        element.applyMatrix4(child.matrix);
+    }, this);
+    child.geometry.verticesNeedUpdate = true;
+
+    // Reset its matrix to the identity
+    child.matrix = new THREE.Matrix4().identity();
+
     // Bind pin to parent
     parent.add(pinMesh);
     // Bind child to pin
     pinMesh.add(child);
 
-    // Get the inverse matrix of the pin's world matrix
+    // Get the inverse of the pin's world matrix
     var pinInvMatrix = new THREE.Matrix4();
     pinInvMatrix.getInverse(pinMesh.matrixWorld);
 
@@ -178,16 +187,21 @@ function pinToParent(position, parent, child, pinRadius = 2, pinResolution = 32)
  * @param {THREE.Scene} scene The scene object to parent the released mesh to.
  */
 function removePin(pin, scene){
+    // Get parent and child from pin
     var parent = pin.parent;
     var child = pin.children[0];
 
+    // Apply any changes done to the pin to the child (who inherited the changes from the parent through the pin)
     child.geometry.vertices.forEach(function(element) {
         element.applyMatrix4(pin.matrixWorld);
     }, this);
     child.geometry.verticesNeedUpdate = true;
 
+    // Remove the pin from the parent
     parent.remove(pin);
+    // Remove the child from the pin
     pin.remove(child);
+    // Add the child to the scene
     scene.add(child);
 }
 
