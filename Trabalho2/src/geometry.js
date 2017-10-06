@@ -239,6 +239,12 @@ function removePin(pin, scene){
         element.applyMatrix4(child.matrixWorld);
     }, this);
     child.geometry.verticesNeedUpdate = true;
+    if(child.children.length >= 0)
+    {
+        child.children.forEach(function(element) {
+            element.applyMatrix(child.matrixWorld);
+        }, this);
+    }
     child.updateMatrix();
 
     // Reset its matrix to the identity
