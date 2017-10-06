@@ -1,12 +1,17 @@
+/*jshint esversion: 6 */
+
 // Max line size constant
-var MAX_POINTS = 50
+var MAX_POINTS = 50;
+
+// The lenght considered to be near a point.
+var NEAR_LENGTH = 10;
 
 // This enum differentiates the type of object a specific mesh can be
 var objType = Object.freeze({
     SCENE: 0,
     POLYGON: 1,
     PIN: 2
-})
+});
 
 /**
  * This class handles a chain of lines and all operations regarding addition, removal
@@ -26,9 +31,9 @@ class LineChain{
         this.positions = new Float32Array( MAX_POINTS * 3 ); // 3 vertices per point
         this.positions[0] = this.positions[3] = startx;
         this.positions[1] = this.positions[4] = starty;
-        this.positions[2] = this.positions[5] = 1.;
+        this.positions[2] = this.positions[5] = 1.0;
         this.geometry.addAttribute( 'position', new THREE.BufferAttribute( this.positions, 3 ) );
-        this.geometry.setDrawRange(0, 2)
+        this.geometry.setDrawRange(0, 2);
         
         // Set up basic material
         this.material = new THREE.LineBasicMaterial( { color: 0x060606, linewidth: 2 } );
@@ -49,8 +54,12 @@ class LineChain{
      */
     addVertice(x, y){
         var positions = this.line.geometry.attributes.position.array;
-        // If the distance to the first vertice is less than or equal to 2.5 and more than 3 lines have been drawn
-        if(computeLength(x, y, positions[0], positions[1]) <= 2.5 && this.nextIndex >= 9)
+
+        var distanceToStart = computeLength(x, y, positions[0], positions[1]);
+        var distanceToLast = computeLength(x, y, positions[this.nextIndex-3], positions[this.nextIndex-2]);
+
+        // If the distance to the first vertice is less than or equal to 2.5 and more than 3 lines have been drawn, close the polygon.
+        if(distanceToStart <= NEAR_LENGTH && this.nextIndex >= 9)
         {
             // Set point being edited to the starting point of the poligon. 
             positions[this.nextIndex] = positions[0];
@@ -62,11 +71,11 @@ class LineChain{
             this.isClosed = true;
         }
         // If the distance to the last vertice is greater than 2.5, add a new vertice.
-        else if(computeLength(x, y, positions[this.nextIndex-3], positions[this.nextIndex-2]) > 2.5){
+        else if( distanceToLast > NEAR_LENGTH){
             // Set current vertice and next vertice to the current mouse position.
             positions[this.nextIndex] = positions[this.nextIndex+3] = x;
             positions[this.nextIndex+1] = positions[this.nextIndex+4] = y;
-            positions[this.nextIndex+2] = positions[this.nextIndex+5] = 1.;
+            positions[this.nextIndex+2] = positions[this.nextIndex+5] = 1.0;
             // Update the next index.
             this.nextIndex+=3;
             // Increase the number of vertices to draw by one.
@@ -74,6 +83,7 @@ class LineChain{
             // Set flag to redraw geometry.
             this.line.geometry.attributes.position.needsUpdate = true;
         }
+        // If neither condition is met, do nothing.
     }
 
     /**
@@ -85,7 +95,7 @@ class LineChain{
         var positions = this.line.geometry.attributes.position.array;
         positions[this.nextIndex] = x;
         positions[this.nextIndex+1] = y;
-        positions[this.nextIndex+2] = 1.;
+        positions[this.nextIndex+2] = 1.0;
         this.line.geometry.attributes.position.needsUpdate = true;
     }
 
@@ -113,14 +123,14 @@ function lineChainToMesh(lineChain){
     // Convert the position array into a vector3 array
     for(var i = 0; i < lineChain.nextIndex/3; i++)
     {
-        geometry.vertices.push(new THREE.Vector3(lineChain.positions[3*i], lineChain.positions[(3*i)+1], 0.));
+        geometry.vertices.push(new THREE.Vector3(lineChain.positions[3*i], lineChain.positions[(3*i)+1], 0.0));
     }
     var holes = [];
 
     // Triangulate faces from the vector array and add the computed faces to the mesh geometry
     var triangles = THREE.ShapeUtils.triangulateShape(geometry.vertices, holes);
-    for( var i = 0; i < triangles.length; i++ ){
-        geometry.faces.push( new THREE.Face3( triangles[i][0], triangles[i][1], triangles[i][2] ));
+    for(var j = 0; j < triangles.length; j++ ){
+        geometry.faces.push( new THREE.Face3( triangles[j][0], triangles[j][1], triangles[j][2] ));
     }
 
     // Compute normals
@@ -128,7 +138,7 @@ function lineChainToMesh(lineChain){
 
     // Create the mesh using the computed geometry
     var mesh = new THREE.Mesh(geometry);
-    mesh.userData = { objectType: objType.POLYGON };
+    mesh.userData = { objectType: objType.POLYGON, isPinned: false };
     
     // Return the newly created mesh object
     return mesh;
@@ -143,7 +153,9 @@ function lineChainToMesh(lineChain){
  * @param {Number} pinResolution The resolution (in triangles) of the circle drawn to indicate the pin. Default is 32.
  * @return {Mesh} The pin created to bind the meshes.
  */
-function pinToParent(position, parent, child, pinRadius = 2, pinResolution = 32){
+function pinToParent(position, parent, child, pinRadius = NEAR_LENGTH/2, pinResolution = 32){
+    // If child is already pinned throw an exception.
+    if (child.parent.parent !== null) {throw "Exception: Can't pin child to parent. Child already pinned.";}
 
     // Create circle mesh with type PIN
     var circleGeometry = new THREE.CircleBufferGeometry(pinRadius, pinResolution);
@@ -151,31 +163,50 @@ function pinToParent(position, parent, child, pinRadius = 2, pinResolution = 32)
     var pinMesh = new THREE.Mesh(circleGeometry, circleMaterial);
     pinMesh.userData = { objectType: objType.PIN };
 
-    // Translate pin to position and update its matrix
+    //// First handle the pin
+
+    // Translate pin to the position
     pinMesh.translateX(position.x);
     pinMesh.translateY(position.y);
+    pinMesh.updateMatrix();
+
+    // Bind pin to parent
+    parent.add(pinMesh);
+    
+    // Undo changes in the parent so pin stays at position
+    var parentInvMatrix = new THREE.Matrix4();
+    parentInvMatrix.getInverse(parent.matrix);
+    pinMesh.applyMatrix(parentInvMatrix);
+
+    // Update the pin's matrices
+    pinMesh.updateMatrix();
     pinMesh.updateMatrixWorld();
 
-    // Apply any previous changes to the child
+    //// Then handle the child
+
+    //Apply any previous changes to the child
     child.geometry.vertices.forEach(function(element) {
         element.applyMatrix4(child.matrix);
     }, this);
     child.geometry.verticesNeedUpdate = true;
 
     // Reset its matrix to the identity
-    child.matrix = new THREE.Matrix4().identity();
+    var childInvMatrix = new THREE.Matrix4().getInverse(child.matrix);
+    child.applyMatrix(childInvMatrix);
 
-    // Bind pin to parent
-    parent.add(pinMesh);
+    // Update the child's matrices
+    child.updateMatrix();
+    child.updateMatrixWorld();
+
+    // Move the child so its origin overlaps the position of the pin
+    child.translateX(-position.x);
+    child.translateY(-position.y);
+
     // Bind child to pin
     pinMesh.add(child);
 
-    // Get the inverse of the pin's world matrix
-    var pinInvMatrix = new THREE.Matrix4();
-    pinInvMatrix.getInverse(pinMesh.matrixWorld);
-
-    // Apply the inverse to the child to reset it's coordinate system to the pin
-    child.applyMatrix(pinInvMatrix);
+    // Update tracker variable to reflect pinned state
+    child.userData.isPinned = true;
 
     // Return the pin
     return pinMesh;
@@ -197,12 +228,19 @@ function removePin(pin, scene){
     }, this);
     child.geometry.verticesNeedUpdate = true;
 
+    // Reset its matrix to the identity
+    child.matrix = new THREE.Matrix4().identity();
+    child.updateMatrix();
+
     // Remove the pin from the parent
     parent.remove(pin);
     // Remove the child from the pin
     pin.remove(child);
     // Add the child to the scene
     scene.add(child);
+
+    // Update tracker variable to reflect unpinned state.
+    child.userData.isPinned = false;
 }
 
 /**
@@ -220,16 +258,27 @@ function isInside(element, position){
         // Get the vertice that follows it
         var vert2Index = i+1;
         // If it would be out of range, set it back to the first vertice
-        if (vert2Index >= element.geometry.vertices.length){ vert2Index = 0 };
+        if (vert2Index >= element.geometry.vertices.length){ vert2Index = 0; }
         // Raycast from the point to infinity. If an intersection is found, add one to the counter.
         if( intersects( element.geometry.vertices[i].x, element.geometry.vertices[i].y,
                         element.geometry.vertices[vert2Index].x, element.geometry.vertices[vert2Index].y,
                         position.x, position.y,
-                        window.innerWidth*2, window.innerHeight*2).hasIntersection ){intersectionCount++};
+                        window.innerWidth*2, window.innerHeight*2).hasIntersection ){intersectionCount++;}
     }
     
     // If intersectionCount is even, the point is outside the polygon, so return false.
     if( intersectionCount%2 === 0 ) return false;
     // Otherwise return true.
     else return true;
+}
+
+/**
+ * This method applies a rotation to a pinned element.
+ * @param {THREE.Mesh} element The element to rotate.
+ * @param {Number} rad The angle in radians.
+ */
+function rotateAroundPin(element, rad){
+    if(element.userData.isPinned !== true){ throw "Exception: Cannot rotate around pin. Element is not pinned."; }
+
+    element.rotateZ(rad);
 }
