@@ -169,15 +169,16 @@ function findNearPinPositionRecursive(element, position){
 function findInsideMeshRecursive(element, position){
     // Initialize array of meshes to return.
     var insideMeshes = [];
+
+    // Apply the current world matrix to the position.
+    var elementMatrixInverse = new THREE.Matrix4().getInverse(element.matrix);
+    var newPosition = new THREE.Vector3().copy(position).applyMatrix4(elementMatrixInverse);
+
     // If this element is a polygon && the position is inside it, add it to the array
-    if( element.userData.objectType === objType.POLYGON && isInside(element, position)){
+    if( element.userData.objectType === objType.POLYGON && isInside(element, newPosition)){
         console.log("Inside element!");
         insideMeshes.push(element);
     }
-
-    // Apply the current world matrix to the position.
-    elementMatrixInverse = new THREE.Matrix4().getInverse(element.matrix);
-    newPosition = new THREE.Vector3().copy(position).applyMatrix4(elementMatrixInverse);
 
     // If this element has children
     if(element.children.length > 0){
