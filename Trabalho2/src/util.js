@@ -59,7 +59,7 @@ function intersects(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2){
     var lambda1 = dLambda1/delta;
     var lambda2 = dLambda2/delta;
 
-    console.log("Line (" + ax1 + ", " + ay1 + "), (" + ax2, ", " +ay2 + ") intersects line (" + bx1 + ", " + by1 + "), (" + bx2 + ", " + by2 + ") at " + lambda1 + ", " + lambda2);
+    // console.log("Line (" + ax1 + ", " + ay1 + "), (" + ax2, ", " +ay2 + ") intersects line (" + bx1 + ", " + by1 + "), (" + bx2 + ", " + by2 + ") at " + lambda1 + ", " + lambda2);
 
     // If coefficients aren't valid, return the default result (false).
     if(!( 0 <= lambda1 && lambda1 <= 1 &&

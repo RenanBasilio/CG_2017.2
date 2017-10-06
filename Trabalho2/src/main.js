@@ -130,23 +130,28 @@ function getMouseDeltaOnCanvas(){
  * @return {THREE.Object3D} The first pin found near the mouse. Undefined if none is found.
  */
 function findNearPinPositionRecursive(element, position){
+    // Apply the current world matrix to the position.
+    var newPosition = new THREE.Vector3().copy(position);
+    if(element.parent !== null)
+    {
+        var elementMatrixInverse = new THREE.Matrix4().getInverse(element.parent.matrix);
+        newPosition.applyMatrix4(elementMatrixInverse);
+    }
+
     // If this element is a pin && it is near the mouse, return it.
     if( element.userData.objectType === objType.PIN &&
-        computeLength(position.x, position.y, element.position.x, element.position.y) < 2){
+        computeLength(newPosition.x, newPosition.y, element.position.x, element.position.y) < 2){
             return element;
-        }
+    }
     // Else, enter recursion loop.
     else{
-        // Apply the current world matrix to the position
-        // position.applyMatrix4(element.matrix);
-
         // If this element has children
         if(element.children.length > 0){
             // Iterate through its children
             for(var i = 0; i < element.children.length; i++)
             {
                 // Call method to verify if the child is a pin near the mouse.
-                var result = findNearPinPositionRecursive(element.children[i], new THREE.Vector3().copy(position).applyMatrix4(element.matrix));
+                var result = findNearPinPositionRecursive(element.children[i], position);
                 // If so, return the child.
                 if(result !== undefined)
                 {
@@ -176,7 +181,6 @@ function findInsideMeshRecursive(element, position){
 
     // If this element is a polygon && the position is inside it, add it to the array
     if( element.userData.objectType === objType.POLYGON && isInside(element, newPosition)){
-        console.log("Inside element!");
         insideMeshes.push(element);
     }
 
@@ -196,7 +200,6 @@ function findInsideMeshRecursive(element, position){
             }
         }
     }
-    console.log(insideMeshes);
 
     // Return the array.
     return insideMeshes;
@@ -330,7 +333,7 @@ function onMouseDown(event){
                         scene.add(newMesh);
                         currState = state.IDLE;
                     } catch (error) {
-                        //console.log("Failed to create Mesh.");
+                        console.log("Failed to create Mesh.");
                         // TODO: Allow 'fixing' complex polygons by undoing the last vertice with right click.
                     }
                 }

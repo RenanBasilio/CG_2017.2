@@ -181,8 +181,6 @@ function removePin(pin, scene){
     var parent = pin.parent;
     var child = pin.children[0];
 
-    //TODO: Apply world matrix to child before removing pin
-    //child.matrixWorld.applyToBufferAttribute(child.geometry.vertices);
     child.geometry.vertices.forEach(function(element) {
         element.applyMatrix4(pin.matrixWorld);
     }, this);
@@ -216,7 +214,6 @@ function isInside(element, position){
                         window.innerWidth*2, window.innerHeight*2).hasIntersection ){intersectionCount++};
     }
     
-    console.log("Intersects mesh in " + intersectionCount + "places.");
     // If intersectionCount is even, the point is outside the polygon, so return false.
     if( intersectionCount%2 === 0 ) return false;
     // Otherwise return true.
