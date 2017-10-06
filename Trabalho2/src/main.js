@@ -35,7 +35,7 @@ var canvasWidth, canvasHeight;
 var scene, camera, raycaster, renderer;
 var frustumSize = 1000;
 
-var debugLine;
+//var debugLine;
 
 ////////////////////////// THREE.js Initializations ////////////////////////////
 
@@ -43,8 +43,8 @@ function init(){
     scene = new THREE.Scene();
     scene.userData = { objectType: objType.SCENE };
 
-    debugLine = new LineChain(0, 0);
-    scene.add(debugLine.line);
+    //debugLine = new LineChain(0, 0);
+    //scene.add(debugLine.line);
 
     canvasWidth = window.innerWidth - 10;
     canvasHeight = window.innerHeight - 10;
@@ -232,7 +232,7 @@ function findInsideMeshRecursive(element, position){
 function onMouseMove(event){
     updateMousePosition(event);
     var mouseOnCanvas = getPositionOnCanvas();
-    debugLine.moveLastVertice(mouseOnCanvas.x, mouseOnCanvas.y);
+    //debugLine.moveLastVertice(mouseOnCanvas.x, mouseOnCanvas.y);
 
     switch (currState){
         case state.DRAWING:
