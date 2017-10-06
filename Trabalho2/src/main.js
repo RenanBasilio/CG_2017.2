@@ -27,12 +27,15 @@ var currState = state.IDLE;
 var currGeometry = null;
 
 var geometries = [];
-var pinGeometries = [];
 
 ////////////////////////// THREE.js Initializations ////////////////////////////
 
 var scene = new THREE.Scene();
 scene.userData = { objectType: objType.SCENE };
+
+
+var debugLine = new LineChain(window.innerHeight*2, window.innerWidth*2);
+scene.add(debugLine.line);
 
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 500);
 camera.position.set(0, 0, 200);
@@ -126,7 +129,7 @@ function getMouseDeltaOnCanvas(){
  * @param {THREE.Vector3} position The position to analize.
  * @return {THREE.Object3D} The first pin found near the mouse. Undefined if none is found.
  */
-function isPinNearPosition(element, position){
+function findNearPinPositionRecursive(element, position){
     // If this element is a pin && it is near the mouse, return it.
     if( element.userData.objectType === objType.PIN &&
         computeLength(position.x, position.y, element.position.x, element.position.y) < 2){
@@ -134,14 +137,16 @@ function isPinNearPosition(element, position){
         }
     // Else, enter recursion loop.
     else{
+        // Apply the current world matrix to the position
+        // position.applyMatrix4(element.matrix);
+
         // If this element has children
         if(element.children.length > 0){
             // Iterate through its children
             for(var i = 0; i < element.children.length; i++)
             {
                 // Call method to verify if the child is a pin near the mouse.
-                position.applyMatrix4(element.matrix);
-                var result = isPinNearPosition(element.children[i], position);
+                var result = findNearPinPositionRecursive(element.children[i], new THREE.Vector3().copy(position).applyMatrix4(element.matrix));
                 // If so, return the child.
                 if(result !== undefined)
                 {
@@ -157,10 +162,51 @@ function isPinNearPosition(element, position){
 
 }
 
+/**
+ * 
+ * @param {*} position 
+ */
+function findInsideMeshRecursive(element, position){
+    // Initialize array of meshes to return.
+    var insideMeshes = [];
+    // If this element is a polygon && the position is inside it, add it to the array
+    if( element.userData.objectType === objType.POLYGON && isInside(element, position)){
+        console.log("Inside element!");
+        insideMeshes.push(element);
+    }
+
+    // Apply the current world matrix to the position.
+    elementMatrixInverse = new THREE.Matrix4().getInverse(element.matrix);
+    newPosition = new THREE.Vector3().copy(position).applyMatrix4(elementMatrixInverse);
+
+    // If this element has children
+    if(element.children.length > 0){
+        // Iterate through its children
+        for(var i = 0; i < element.children.length; i++)
+        {
+            // For each child, call this method recursivelly.
+            var result = findInsideMeshRecursive(element.children[i], newPosition);
+            // If the result contains any meshes, transcribe them to the array.
+            if(result.length > 0)
+            {
+                result.forEach(function(element) {
+                    insideMeshes.push(element);
+                }, this);
+            }
+        }
+    }
+    console.log(insideMeshes);
+
+    // Return the array.
+    return insideMeshes;
+}
+
 ////////////////////////// Mouse Event Handlers ////////////////////////////
 
 function onMouseMove(event){
     updateMousePosition(event);
+    var mouseOnCanvas = getMousePositionOnCanvas();
+    debugLine.moveLastVertice(mouseOnCanvas.x, mouseOnCanvas.y);
     switch (currState){
         case state.DRAWING:
             var mouseOnCanvas = getMousePositionOnCanvas();
@@ -177,6 +223,7 @@ function onMouseMove(event){
 }
 
 function onMouseDown(event){
+    console.log(scene);
     // Get the mouse position in canvas coordinates.
     var mouseOnCanvas = getMousePositionOnCanvas();
 
@@ -195,30 +242,30 @@ function onMouseDown(event){
             }
 
             // First check for pin intersections
-            var pin = isPinNearPosition(scene, mouseOnCanvas);
+            var pin = findNearPinPositionRecursive(scene, mouseOnCanvas);
             if (pin !== undefined)
             {
+                // Remove the pin and parent the object to the scene.
                 removePin(pin, scene);
 
                 // Operation was pin removal, so return.
                 return;
             }
 
-            // Raycast mesh intersection
-            raycaster.setFromCamera( mouse, camera );
-
-            // Check for mesh intersections
-            var intersects = raycaster.intersectObjects( geometries );
-            if (intersects.length > 1){
-                var pin = pinToParent(mouseOnCanvas, intersects[0].object, intersects[1].object);
+            var intersects = findInsideMeshRecursive(scene, mouseOnCanvas);
+            // If intersected only one mesh.
+            if (intersects.length === 1){
+                // Pin the mesh to the scene.
+                var pin = pinToParent(mouseOnCanvas, scene, intersects[0]);
 
                 // Operation was pin placement, so return.
                 return;
             }
-            else if (intersects.length === 1){
-                var pin = pinToParent(mouseOnCanvas, scene, intersects[0].object);
-                
-                console.log(scene);
+            // If intersected two or more.
+            else if (intersects.length > 1){
+                // Pin the first element to the second.
+                var pin = pinToParent(mouseOnCanvas, intersects[0], intersects[1]);
+
                 // Operation was pin placement, so return.
                 return;
             }
@@ -238,8 +285,9 @@ function onMouseDown(event){
                     case mouseButton.LEFT:
 
                         // Raycast mesh intersection
-                        raycaster.setFromCamera( mouse, camera );
-                        var intersects = raycaster.intersectObjects( geometries );
+                        //raycaster.setFromCamera( mouse, camera );
+                        //var intersects = raycaster.intersectObjects( geometries );
+                        var intersects = findInsideMeshRecursive(scene, mouseOnCanvas);
 
                         // If a mesh was selected
                         if(intersects.length > 0)
@@ -248,7 +296,7 @@ function onMouseDown(event){
                             currState = state.MOVE_MESH;
                             // Change currently selected geometry to the top (last) mesh
                             // in the list of meshes returned by the raycaster.
-                            currGeometry = intersects[intersects.length-1].object;
+                            currGeometry = intersects[intersects.length-1];
                         }
 
                         // If selected an empty space
@@ -281,7 +329,7 @@ function onMouseDown(event){
                         scene.add(newMesh);
                         currState = state.IDLE;
                     } catch (error) {
-                        console.log("Failed to create Mesh.");
+                        //console.log("Failed to create Mesh.");
                         // TODO: Allow 'fixing' complex polygons by undoing the last vertice with right click.
                     }
                 }

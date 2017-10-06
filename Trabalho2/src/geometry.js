@@ -129,7 +129,6 @@ function lineChainToMesh(lineChain){
     // Create the mesh using the computed geometry
     var mesh = new THREE.Mesh(geometry);
     mesh.userData = { objectType: objType.POLYGON };
-    console.log(mesh);
     
     // Return the newly created mesh object
     return mesh;
@@ -146,18 +145,30 @@ function lineChainToMesh(lineChain){
  */
 function pinToParent(position, parent, child, pinRadius = 2, pinResolution = 32){
 
-    // Create circle mesh
+    // Create circle mesh with type PIN
     var circleGeometry = new THREE.CircleBufferGeometry(pinRadius, pinResolution);
     var circleMaterial = new THREE.MeshBasicMaterial({color: 0x202020});
     var pinMesh = new THREE.Mesh(circleGeometry, circleMaterial);
     pinMesh.userData = { objectType: objType.PIN };
 
+    // Translate pin to position and update its matrix
     pinMesh.translateX(position.x);
     pinMesh.translateY(position.y);
+    pinMesh.updateMatrixWorld();
 
+    // Bind pin to parent
     parent.add(pinMesh);
+    // Bind child to pin
     pinMesh.add(child);
 
+    // Get the inverse matrix of the pin's world matrix
+    var pinInvMatrix = new THREE.Matrix4();
+    pinInvMatrix.getInverse(pinMesh.matrixWorld);
+
+    // Apply the inverse to the child to reset it's coordinate system to the pin
+    child.applyMatrix(pinInvMatrix);
+
+    // Return the pin
     return pinMesh;
 }
 
@@ -171,10 +182,43 @@ function removePin(pin, scene){
     var child = pin.children[0];
 
     //TODO: Apply world matrix to child before removing pin
-    child.matrixWorld.applyToBufferAttribute(child.geometry.vertices);
+    //child.matrixWorld.applyToBufferAttribute(child.geometry.vertices);
+    child.geometry.vertices.forEach(function(element) {
+        element.applyMatrix4(child.matrixWorld);
+    }, this);
     child.geometry.verticesNeedUpdate = true;
 
     parent.remove(pin);
     pin.remove(child);
     scene.add(child);
+}
+
+/**
+ * This method returns whether a position is inside a given element, using ray tracing techniques.
+ * @param {THREE.Mesh} element The element to verify against.
+ * @param {THREE.Vector3} position The position to verify.
+ * @return {Boolean} True if the position is inside the mesh. False otherwise.
+ */
+function isInside(element, position){
+    // Initialize a variable to count the intersections
+    var intersectionCount = 0;
+
+    // For each vertice in the geometry
+    for(var i = 0; i < element.geometry.vertices.length; i++){
+        // Get the vertice that follows it
+        var vert2Index = i+1;
+        // If it would be out of range, set it back to the first vertice
+        if (vert2Index >= element.geometry.vertices.length){ vert2Index = 0 };
+        // Raycast from the point to infinity. If an intersection is found, add one to the counter.
+        if( intersects( element.geometry.vertices[i].x, element.geometry.vertices[i].y,
+                        element.geometry.vertices[vert2Index].x, element.geometry.vertices[vert2Index].y,
+                        position.x, position.y,
+                        window.innerWidth*2, window.innerHeight*2).hasIntersection ){intersectionCount++};
+    }
+    
+    console.log("Intersects mesh in " + intersectionCount + "places.");
+    // If intersectionCount is even, the point is outside the polygon, so return false.
+    if( intersectionCount%2 === 0 ) return false;
+    // Otherwise return true.
+    else return true;
 }
