@@ -46,8 +46,8 @@ function init(){
     debugLine = new LineChain(0, 0);
     scene.add(debugLine.line);
 
-    canvasWidth = window.innerWidth;
-    canvasHeight = window.innerHeight;
+    canvasWidth = window.innerWidth - 5;
+    canvasHeight = window.innerHeight - 5;
 
     var aspect = canvasWidth / canvasHeight;
     camera = new THREE.OrthographicCamera( frustumSize * aspect / - 2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, 1, 1000 );
@@ -154,7 +154,7 @@ function findNearPinPositionRecursive(element, position){
     var newPosition = new THREE.Vector3().copy(position);
     if(element.parent !== null)
     {
-        var elementMatrixInverse = new THREE.Matrix4().getInverse(element.parent.matrix);
+        var elementMatrixInverse = new THREE.Matrix4().getInverse(element.parent.matrixWorld);
         newPosition.applyMatrix4(elementMatrixInverse);
     }
 
@@ -433,8 +433,8 @@ document.addEventListener( 'mouseup', onMouseUp, false);
 
 // Optimized window resize event handler
 window.addEventListener("optimizedResize", function() {
-    canvasWidth = window.innerWidth;
-    canvasHeight = window.innerHeight;
+    canvasWidth = window.innerWidth - 5;
+    canvasHeight = window.innerHeight - 5;
 
     var aspect = canvasWidth / canvasHeight;
     camera.left = -frustumSize * aspect / 2;
