@@ -184,7 +184,7 @@ function removePin(pin, scene){
     //TODO: Apply world matrix to child before removing pin
     //child.matrixWorld.applyToBufferAttribute(child.geometry.vertices);
     child.geometry.vertices.forEach(function(element) {
-        element.applyMatrix4(child.matrixWorld);
+        element.applyMatrix4(pin.matrixWorld);
     }, this);
     child.geometry.verticesNeedUpdate = true;
 
