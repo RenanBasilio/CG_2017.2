@@ -183,16 +183,24 @@ function pinToParent(position, parent, child, pinRadius = NEAR_LENGTH/2, pinReso
     child.translateX(-position.x);
     child.translateY(-position.y);
     child.updateMatrix();
+    child.updateMatrixWorld();
 
     //Apply any previous changes to the child
     child.geometry.vertices.forEach(function(element) {
         element.applyMatrix4(child.matrix);
     }, this);
     child.geometry.verticesNeedUpdate = true;
+    if(child.children.length >= 0)
+    {
+        child.children.forEach(function(element) {
+            element.applyMatrix(child.matrix);
+        }, this);
+    }
 
     // Reset its matrix to the identity
     var childInvMatrix = new THREE.Matrix4().getInverse(child.matrix);
     child.applyMatrix(childInvMatrix);
+    child.updateMatrixWorld();
 
     // Bind child to pin
     pinMesh.add(child);
