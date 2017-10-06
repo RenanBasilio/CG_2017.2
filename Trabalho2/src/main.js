@@ -29,8 +29,6 @@ var currState = state.IDLE;
  */
 var currGeometry = null;
 
-var geometries = [];
-
 var canvasWidth, canvasHeight;
 var scene, camera, raycaster, renderer;
 var frustumSize = 1000;
@@ -367,7 +365,6 @@ function onMouseDown(event){
                         var newMesh = lineChainToMesh(currGeometry);
                         scene.remove(currGeometry.line);
                         currGeometry = null;
-                        geometries.push(newMesh);
                         scene.add(newMesh);
                         currState = state.IDLE;
                     } catch (error) {
