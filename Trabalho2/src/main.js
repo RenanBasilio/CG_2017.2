@@ -102,7 +102,7 @@ function getMouseDelta(){
  * @param {THREE.Vector} position Optional vector containing the position to translate to canvas coordinates.
  * @return The position of the mouse in 3D canvas coordinates.
  */
-function getMousePositionOnCanvas(position = undefined){
+function getPositionOnCanvas(position = undefined){
     var vector = new THREE.Vector3();
 
     if(position === undefined){
@@ -130,8 +130,8 @@ function getMousePositionOnCanvas(position = undefined){
  * Computes the distance the mouse was moved on canvas between the last two mouse updates.
  */
 function getMouseDeltaOnCanvas(){
-    var mousePosCurr = getMousePositionOnCanvas();
-    var mousePosLast = getMousePositionOnCanvas(mouseLast);
+    var mousePosCurr = getPositionOnCanvas();
+    var mousePosLast = getPositionOnCanvas(mouseLast);
     var delta = new THREE.Vector3(
         mousePosCurr.x - mousePosLast.x,
         mousePosCurr.y - mousePosLast.y,
@@ -231,7 +231,7 @@ function findInsideMeshRecursive(element, position){
 
 function onMouseMove(event){
     updateMousePosition(event);
-    var mouseOnCanvas = getMousePositionOnCanvas();
+    var mouseOnCanvas = getPositionOnCanvas();
     debugLine.moveLastVertice(mouseOnCanvas.x, mouseOnCanvas.y);
 
     switch (currState){
@@ -244,10 +244,11 @@ function onMouseMove(event){
             currGeometry.translateY(mouseDelta.y);
             break;
         case state.ROTATE_MESH:
-            var firstVector = getMousePositionOnCanvas(mouseLast).applyMatrix4(currGeometry.matrixWorld);
-            var secondVector = getMousePositionOnCanvas().applyMatrix4(currGeometry.matrixWorld);
-            var angle = firstVector.angleTo(secondVector);
-            rotateAroundPin(currGeometry, angle);
+            var firstVector = new THREE.Vector3().subVectors(getPositionOnCanvas(mouseLast), currGeometry.getWorldPosition());
+            var secondVector = new THREE.Vector3().subVectors(getPositionOnCanvas(), currGeometry.getWorldPosition());
+            var orientation = computeOrientation(firstVector.x, firstVector.y, secondVector.x, secondVector.y, currGeometry.position.x, currGeometry.position.y);
+            var angle = secondVector.angleTo(firstVector);
+            rotateAroundPin(currGeometry, orientation*angle);
             break;
         default:
             break;
@@ -257,7 +258,7 @@ function onMouseMove(event){
 function onMouseDown(event){
     console.log(scene);
     // Get the mouse position in canvas coordinates.
-    var mouseOnCanvas = getMousePositionOnCanvas();
+    var mouseOnCanvas = getPositionOnCanvas();
 
     // If double click or right click event was detected
     if (event.type === "dblclick" || event.which === mouseButton.RIGHT)
@@ -386,6 +387,12 @@ function onMouseUp(event){
     switch (currState) {
         // If currently moving a mesh (hold button operation)
         case state.MOVE_MESH:
+            // Deselect the mesh
+            currGeometry = null;
+            // Reset the state
+            currState = state.IDLE;
+            break;
+        case state.ROTATE_MESH:
             // Deselect the mesh
             currGeometry = null;
             // Reset the state

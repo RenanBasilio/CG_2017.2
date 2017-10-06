@@ -165,17 +165,12 @@ function pinToParent(position, parent, child, pinRadius = NEAR_LENGTH/2, pinReso
 
     //// First handle the pin
 
-    // Translate pin to the position
-    pinMesh.translateX(position.x);
-    pinMesh.translateY(position.y);
-    pinMesh.updateMatrix();
-
     // Bind pin to parent
     parent.add(pinMesh);
     
     // Undo changes in the parent so pin stays at position
     var parentInvMatrix = new THREE.Matrix4();
-    parentInvMatrix.getInverse(parent.matrix);
+    parentInvMatrix.getInverse(parent.matrixWorld);
     pinMesh.applyMatrix(parentInvMatrix);
 
     // Update the pin's matrices
@@ -183,6 +178,11 @@ function pinToParent(position, parent, child, pinRadius = NEAR_LENGTH/2, pinReso
     pinMesh.updateMatrixWorld();
 
     //// Then handle the child
+
+    // Move the child so its origin overlaps the position of the pin
+    child.translateX(-position.x);
+    child.translateY(-position.y);
+    child.updateMatrix();
 
     //Apply any previous changes to the child
     child.geometry.vertices.forEach(function(element) {
@@ -194,16 +194,13 @@ function pinToParent(position, parent, child, pinRadius = NEAR_LENGTH/2, pinReso
     var childInvMatrix = new THREE.Matrix4().getInverse(child.matrix);
     child.applyMatrix(childInvMatrix);
 
-    // Update the child's matrices
-    child.updateMatrix();
-    child.updateMatrixWorld();
-
-    // Move the child so its origin overlaps the position of the pin
-    child.translateX(-position.x);
-    child.translateY(-position.y);
-
     // Bind child to pin
     pinMesh.add(child);
+
+    // Translate pin to the position
+    pinMesh.translateX(position.x);
+    pinMesh.translateY(position.y);
+    pinMesh.updateMatrix();
 
     // Update tracker variable to reflect pinned state
     child.userData.isPinned = true;
@@ -222,22 +219,23 @@ function removePin(pin, scene){
     var parent = pin.parent;
     var child = pin.children[0];
 
-    // Apply any changes done to the pin to the child (who inherited the changes from the parent through the pin)
-    child.geometry.vertices.forEach(function(element) {
-        element.applyMatrix4(pin.matrixWorld);
-    }, this);
-    child.geometry.verticesNeedUpdate = true;
-
-    // Reset its matrix to the identity
-    child.matrix = new THREE.Matrix4().identity();
-    child.updateMatrix();
-
     // Remove the pin from the parent
     parent.remove(pin);
     // Remove the child from the pin
     pin.remove(child);
     // Add the child to the scene
     scene.add(child);
+
+    // Apply any changes done to the pin to the child (who inherited the changes from the parent through the pin)
+    child.geometry.vertices.forEach(function(element) {
+        element.applyMatrix4(child.matrixWorld);
+    }, this);
+    child.geometry.verticesNeedUpdate = true;
+    child.updateMatrix();
+
+    // Reset its matrix to the identity
+    var childInvMatrix = new THREE.Matrix4().getInverse(child.matrix);
+    child.applyMatrix(childInvMatrix);
 
     // Update tracker variable to reflect unpinned state.
     child.userData.isPinned = false;
@@ -281,4 +279,26 @@ function rotateAroundPin(element, rad){
     if(element.userData.isPinned !== true){ throw "Exception: Cannot rotate around pin. Element is not pinned."; }
 
     element.rotateZ(rad);
+}
+
+/**
+ * This method computes the orientation of three points based on the orientation test.
+ * @param {*} p1x The x coordinate of the first point.
+ * @param {*} p1y The y coordinate of the first point.
+ * @param {*} p2x The x coordinate of the second point.
+ * @param {*} p2y The y coordinate of the second point.
+ * @param {*} p3x The x coordinate of the third point.
+ * @param {*} p3y The y coordinate of the third point.
+ * @return {Number} +1 if positive orientation, -1 if negative orientation, 0 if the points are colinear.
+ */
+function computeOrientation(p1x, p1y, p2x, p2y, p3x, p3y){
+    var matrix = new THREE.Matrix3();
+    matrix.set(  1,   1,   1, 
+               p1x, p2x, p3x,
+               p1y, p2y, p3y);
+    var det = matrix.determinant();
+    //console.log(det);
+    if(det < 0) return -1;
+    else if(det > 0) return 1;
+    else return 0;
 }
