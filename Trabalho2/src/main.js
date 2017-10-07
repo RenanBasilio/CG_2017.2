@@ -158,7 +158,7 @@ function findNearPinPositionRecursive(element, position){
 
     // If this element is a pin && it is near the mouse, return it.
     if( element.userData.objectType === objType.PIN &&
-        computeLength(newPosition.x, newPosition.y, element.position.x, element.position.y) < 5){
+        computeLength(newPosition.x, newPosition.y, element.position.x, element.position.y) < 10){
             return element;
     }
     // Else, enter recursion loop.
