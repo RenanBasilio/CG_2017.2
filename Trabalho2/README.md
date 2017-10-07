@@ -13,3 +13,10 @@ O repositório referente ao projeto pode ser encontrado em https://github.com/Re
 
 
 ## Funcionalidades Implementadas
+* Desenho de polígonos através de uma sequência de segmentos de reta.
+* Abilidade de desfazer o primeiro traço de um novo polígono.
+* Abilidade de pregar um polígono a outro.
+  * O polígono tratado como pai será sempre o mais antigo da hierarquia entre o par.
+* _Picking_ de polígono.
+* Translação do polígono selecionado através do _picking_ se este não estiver pregado.
+* Rotação do polígono selecionado através do _picking_ em torno do prego se este estiver pregado. 
