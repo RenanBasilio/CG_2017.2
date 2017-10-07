@@ -254,7 +254,6 @@ function onMouseMove(event){
 }
 
 function onMouseDown(event){
-    console.log(scene);
     // Get the mouse position in canvas coordinates.
     var mouseOnCanvas = getPositionOnCanvas();
 
