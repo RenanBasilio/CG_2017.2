@@ -138,6 +138,7 @@ function lineChainToMesh(lineChain){
 
     // Create the mesh using the computed geometry
     var mesh = new THREE.Mesh(geometry);
+    mesh.frustumCulled = false;
     mesh.userData = { objectType: objType.POLYGON, isPinned: false };
     
     // Return the newly created mesh object
