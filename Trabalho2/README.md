@@ -25,7 +25,14 @@ Todos os trabalhos podem ser executados online em https://renanbasilio.github.io
 * Desenho de polígonos através de uma sequência de segmentos de reta.
 * Abilidade de desfazer o primeiro traço de um novo polígono.
 * Abilidade de pregar um polígono a outro.
-  * O polígono tratado como pai será sempre o mais antigo da hierarquia entre o par.
+  * O polígono tratado como filho será sempre o primeiro polígono sem pai da hierarquia entre os polígonos no espaço onde o clique ocorreu.
 * _Picking_ de polígono.
-* Translação do polígono selecionado através do _picking_ se este não estiver pregado.
-* Rotação do polígono selecionado através do _picking_ em torno do prego se este estiver pregado. 
+* Translação do polígono selecionado se este não estiver pregado.
+* Rotação do polígono selecionado em torno do prego se este estiver pregado.
+
+* Controle por mouse
+  * Botão esquerdo faz _picking_ de polígono quando sobre um polígono, ou desenho de um novo polígono quando sobre o canvas.
+  * Botão direito ou double click do botão esquerdo pregam o polígono.
+* Controle por toque
+  * Toque simples faz _picking_ de polígono quando sobre um polígono, ou desenho de um novo polígono quando sobre o canvas.
+  * Toque longo prega o polígono.

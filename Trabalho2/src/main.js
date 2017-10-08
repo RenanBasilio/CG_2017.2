@@ -304,8 +304,20 @@ function onMouseDown(event){
             }
             // If intersected two or more.
             else if (intersects.length > 1){
+                var firstUnparented;
+                var parentCandidate;
+
+                for(var i = 0; i < intersects.length; i++)
+                {
+                    if( firstUnparented === undefined &&
+                        intersects[i].parent === scene && 
+                        intersects[i].userData.isPinned === false) firstUnparented = intersects[i];
+                    if( parentCandidate === undefined &&
+                        intersects[i] !== firstUnparented) parentCandidate = intersects[i];
+                }
+
                 // Pin the first element to the second.
-                var pin = pinToParent(mouseOnCanvas, intersects[0], intersects[1]);
+                var pin = pinToParent(mouseOnCanvas,parentCandidate, firstUnparented);
 
                 // Operation was pin placement, so return.
                 return;
