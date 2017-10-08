@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <script type="text/javascript" src="libs/p5js/p5.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.14/p5.min.js"></script>
+        <script>
+            if (!window.p5){
+                document.write("<script type=\"text\/javascript\" src=\"libs/p5js/p5.min.js\"><\/script>");
+                console.warn("Failed to load from CDN. Using local copy instead");
+            }
+        </script>
         <script type="text/javascript" src="src/geometry.js"></script>
         <script type="text/javascript" src="src/drawing.js"></script>
         <script type="text/javascript" src="src/main.js"></script>

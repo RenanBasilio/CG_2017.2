@@ -61,6 +61,7 @@ function init(){
     renderer.setClearColor(0xfafafa, 1);
 
     renderer.domElement.setAttribute('oncontextmenu', "return false;");
+    renderer.domElement.setAttribute('id', 'canvas');
     document.body.appendChild(renderer.domElement);
 }
 
@@ -75,11 +76,15 @@ var mouseLast = new THREE.Vector3(0.0, 0.0, 0.0);
  */
 function updateMousePosition(event){
     mouseLast.copy(mouse);
-    //mouse.x = event.clientX - (width / 2 );
-    //mouse.y = -event.clientY + (height / 2);
-    mouse.x = ( event.clientX / canvasWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / canvasHeight ) * 2 + 1;
-    //console.log(mouse);
+
+    if(event.type == 'touchmove' || event.type == 'touchstart'){
+        mouse.x = ( ( event.changedTouches[0].clientX - 5 ) / canvasWidth ) * 2 - 1;
+        mouse.y = - ( ( event.changedTouches[0].clientY - 5 ) / canvasHeight ) * 2 + 1;
+    }
+    else{
+        mouse.x = ( ( event.clientX - 5 ) / canvasWidth ) * 2 - 1;
+        mouse.y = - ( ( event.clientY - 5 ) / canvasHeight ) * 2 + 1;
+    }
 }
 
 /**
@@ -158,7 +163,7 @@ function findNearPinPositionRecursive(element, position){
 
     // If this element is a pin && it is near the mouse, return it.
     if( element.userData.objectType === objType.PIN &&
-        computeLength(newPosition.x, newPosition.y, element.position.x, element.position.y) < 5){
+        computeLength(newPosition.x, newPosition.y, element.position.x, element.position.y) < 10){
             return element;
     }
     // Else, enter recursion loop.
@@ -227,6 +232,7 @@ function findInsideMeshRecursive(element, position){
 
 ////////////////////////// Mouse Event Handlers ////////////////////////////
 
+
 function onMouseMove(event){
     updateMousePosition(event);
     var mouseOnCanvas = getPositionOnCanvas();
@@ -254,7 +260,10 @@ function onMouseMove(event){
 }
 
 function onMouseDown(event){
-    console.log(scene);
+    if(event.sourceCapabilities !== undefined && event.sourceCapabilities.firesTouchEvents === true){
+        return;
+    }
+    console.log(event);
     // Get the mouse position in canvas coordinates.
     var mouseOnCanvas = getPositionOnCanvas();
 
@@ -262,15 +271,16 @@ function onMouseDown(event){
     if (event.type === "dblclick" || event.which === mouseButton.RIGHT)
     {
         // Check if double click was from idle (new geometry with only one point)
-        if (currGeometry === null || currGeometry.nextIndex === 3)
+        if (currGeometry === null || currGeometry.nextIndex === 3 || currState === state.IDLE);
         {
+            /*
             if(currGeometry !== null){
                 // Remove mistakenly created geometry
                 scene.remove(currGeometry.line);
                 currGeometry.dispose();
                 currGeometry = undefined;
                 currState = state.IDLE;
-            }
+            }*/
 
             // First check for pin intersections
             var nearPin = findNearPinPositionRecursive(scene, mouseOnCanvas);
@@ -294,8 +304,20 @@ function onMouseDown(event){
             }
             // If intersected two or more.
             else if (intersects.length > 1){
+                var firstUnparented;
+                var parentCandidate;
+
+                for(var i = 0; i < intersects.length; i++)
+                {
+                    if( firstUnparented === undefined &&
+                        intersects[i].parent === scene && 
+                        intersects[i].userData.isPinned === false) firstUnparented = intersects[i];
+                    if( parentCandidate === undefined &&
+                        intersects[i] !== firstUnparented) parentCandidate = intersects[i];
+                }
+
                 // Pin the first element to the second.
-                var pin = pinToParent(mouseOnCanvas, intersects[0], intersects[1]);
+                var pin = pinToParent(mouseOnCanvas,parentCandidate, firstUnparented);
 
                 // Operation was pin placement, so return.
                 return;
@@ -405,6 +427,40 @@ document.addEventListener( 'mousemove', onMouseMove, false );
 document.addEventListener( 'dblclick', onMouseDown, false );
 document.addEventListener( 'mouseup', onMouseUp, false);
 
+var onLongTouch; 
+var timer;
+var touchDuration = 1000; //length of time we want the user to touch before we do something
+
+function onTouchStart(event){
+    updateMousePosition(event);
+    var newEvent = new Event('mousedown');
+    newEvent.which = mouseButton.LEFT;
+    onMouseDown(newEvent);
+    timer = setTimeout(onLongTouch, touchDuration);
+}
+
+function onTouchEnd(event) {
+        //stops short touches from firing the event
+        if (timer) { clearTimeout(timer); } // clearTimeout, not cleartimeout..
+        // call appropriate event handler
+        onMouseUp(event);
+}
+
+function onTouchMove(event) {
+    //stops short touches from firing the event
+    if (timer) { clearTimeout(timer); } // clearTimeout, not cleartimeout..
+    // call appropriate event handler
+    onMouseMove(event);
+}
+
+onLongTouch = function(){ 
+    var event = new Event('dblclick');
+    onMouseDown(event);
+ };
+
+document.addEventListener( 'touchstart', onTouchStart, false);
+document.addEventListener( 'touchend', onTouchEnd, false);
+document.addEventListener( 'touchmove', onTouchMove, false);
 
 ////////////////////////// THREE Animation Loop /////////////////////////////
 
