@@ -263,7 +263,7 @@ function onMouseDown(event){
     if(event.sourceCapabilities !== undefined && event.sourceCapabilities.firesTouchEvents === true){
         return;
     }
-    console.log(event);
+    //console.log(event);
     // Get the mouse position in canvas coordinates.
     var mouseOnCanvas = getPositionOnCanvas();
 
