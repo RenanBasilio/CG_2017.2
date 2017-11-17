@@ -1,3 +1,4 @@
+/*jshint esversion: 6 */
 
 /**
  * This method computes the bounding box of a given THREE.js Object3D tree.
@@ -28,4 +29,34 @@ function computeBoundingBox(object){
         });
 
         return bbox;
+}
+
+class RollingValue{
+    constructor( minValue, maxValue, initValue = 0 )
+    {
+        this.value = initValue;
+        this.maxValue = maxValue;
+        this.minValue = minValue;
+    }
+    
+    add( value )
+    {
+        this.value += value;
+
+        var delta = 0;
+
+        if (this.value > this.maxValue){
+            delta = this.value - this.maxValue;
+            this.value = this.minValue + delta;
+        }
+        else if (this.value < this.minValue){
+            delta = this.minValue - this.value;
+            this.value = this.maxValue - delta;
+        }
+    }
+
+    get()
+    {
+        return this.value;
+    }
 }
