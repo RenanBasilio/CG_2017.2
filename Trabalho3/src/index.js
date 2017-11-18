@@ -2,7 +2,7 @@
 
 // Scene Variables
 var canvasWidth, canvasHeight;
-var scene, camera, renderer, loader;
+var scene, camera, renderer, controls, loader;
 var frustumSize = 1000;
 var FOV = 75;
 
@@ -14,6 +14,9 @@ var ambientLight, directionalLight;
 
 // The key used to change rotation mode
 var SWITCH_KEY = "ControlLeft";
+
+// The mouse wheel delta that denotes 1 unit of zoom.
+var dollySpeed = 0.1 / 120;
 
 /**
  * Enumerates mouse buttons as present in event.which
@@ -109,6 +112,8 @@ function init(){
 
     tanFOV = Math.tan( ( ( Math.PI / 180 ) * camera.fov / 2 ) );
     windowInitialHeight = window.innerHeight;
+
+    //controls = new THREE.OrbitControls(camera);
 }
 
 init();
@@ -159,44 +164,52 @@ function getMouseDeltaInWorld(){
 
 /////////////////////////////// Camera Methods /////////////////////////////////
 
+
+var centerAxis = new THREE.AxesHelper(1);
+scene.add(centerAxis);
+
 var center = new THREE.Vector3(0, 0, 0);
 
-/**
- * 
- * @param {THREE.Vector3} distance 
- */
+
 function translateCamera(distance){
 
-    camera.translateX(-distance.x);
-    center.x += distance.x;
+    scene.translateX(distance.x);
+    center.x += -distance.x;
 
-    camera.translateY(-distance.y);
-    center.y += distance.y;
+    scene.translateY(distance.y);
+    center.y += -distance.y;
 
-    camera.translateZ(-distance.z);
-    center.z += distance.z;
+    scene.translateZ(distance.z);
+    center.z += -distance.z;
+
+    centerAxis.position.set(center.x, center.y, center.z);
 }
 
-var horizontalRotation = new RollingValue(-1, 1);
-var verticalRotation = new RollingValue(-1, 1);
-
 function rotateCameraAroundObject(distance){
-    //horizontalRotation.add(distance.x);
-    //verticalRotation.add(distance.y);
 
-    //var radius = center.distanceTo(camera.position);
-    //var radius = 2;
+    // Create a quaternion for horizontal rotation
+    var horizontalQuaternion = new THREE.Quaternion().setFromAxisAngle(camera.up, Math.PI*distance.x);
 
-    //var xPos = camera.position.x + radius*Math.cos(Math.PI*distance.x);
-    //var zPos = camera.position.z + radius*Math.sin(Math.PI*distance.x);
+    // Compute the axis for overhead rotation
+    var centerVector = new THREE.Vector3().subVectors(camera.position, center).normalize();
+    var horizontalAxis = new THREE.Vector3().crossVectors(camera.up, centerVector).normalize();
 
-    //camera.translateX(xPos);
-    //camera.translateZ(zPos);
-    scene.applyQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI*distance.x));
+    // Create a quaternion for overhead rotation
+    var verticalQuaternion = new THREE.Quaternion().setFromAxisAngle(horizontalAxis, -Math.PI*distance.y);
 
-    camera.lookAt(center);
+    // Combine the quaternions
+    var quaternion = new THREE.Quaternion().multiplyQuaternions(horizontalQuaternion, verticalQuaternion);
 
-    camera.updateMatrix();
+    // Apply the quaternion to the scene
+    scene.applyQuaternion(quaternion);
+
+}
+
+function dollyCamera(distance){
+
+    camera.translateZ(dollySpeed * distance);
+
+    camera.updateProjectionMatrix();
 }
 
 /////////////////////////////// Event Handlers /////////////////////////////////
@@ -255,6 +268,9 @@ function onMouseMove(event){
 
 function onMouseScroll(event){
 
+    var scrollDistance = event.wheelDelta;
+    dollyCamera(scrollDistance);
+
 }
 
 document.addEventListener("mousedown", onMouseDown, false);
@@ -263,6 +279,7 @@ document.addEventListener("mousemove", onMouseMove, false);
 document.addEventListener("mousewheel", onMouseScroll, false);
 document.addEventListener("keydown", onKeyDown, false);
 document.addEventListener("keyup", onKeyUp, false);
+
 
 ///////////////////////////////// Main Loop ////////////////////////////////////
 
