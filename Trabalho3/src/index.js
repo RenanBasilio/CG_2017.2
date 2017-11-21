@@ -12,28 +12,6 @@ var tanFOV, windowInitialHeight;
 // Lighting variables
 var ambientLight, directionalLight;
 
-// The key used to change rotation mode
-var SWITCH_KEY = "ControlLeft";
-
-// The mouse wheel delta that denotes 1 unit of zoom.
-var dollySpeed = 0.1 / 120;
-
-/**
- * Enumerates mouse buttons as present in event.which
- */
-var mouseButton = Object.freeze({
-    LEFT: 1,
-    MIDDLE: 2,
-    RIGHT: 3
-});
-
-var mouse = new THREE.Vector3(0.0, 0.0, 0.0);
-var mouseLast = new THREE.Vector3(0.0, 0.0, 0.0);
-
-var isMouseHeld = false;
-var whichMouse;
-var isCtrlHeld = false;
-
 ///////////////////// THREE.js and Scene Initializations ///////////////////////
 
 function init(){
@@ -113,40 +91,14 @@ function init(){
     tanFOV = Math.tan( ( ( Math.PI / 180 ) * camera.fov / 2 ) );
     windowInitialHeight = window.innerHeight;
 
+    controls = new CameraController(camera, scene, renderer.domElement);
+
     //controls = new THREE.OrbitControls(camera);
 }
 
 init();
 
 /////////////////////////////// Mouse Position /////////////////////////////////
-
-/**
- * Updates the mouse position in screen space.
- * @param {*} event The event that triggered the update.
- */
-function updateMousePosition(event){
-    mouseLast.copy(mouse);
-
-    if(event.type == 'touchmove' || event.type == 'touchstart'){
-        mouse.x = ( ( event.changedTouches[0].clientX - 5 ) / canvasWidth ) * 2 - 1;
-        mouse.y = - ( ( event.changedTouches[0].clientY - 5 ) / canvasHeight ) * 2 + 1;
-    }
-    else{
-        mouse.x = ( ( event.clientX - 5 ) / canvasWidth ) * 2 - 1;
-        mouse.y = - ( ( event.clientY - 5 ) / canvasHeight ) * 2 + 1;
-    }
-}
-
-/**
- * Compute the distance the mouse was moved between the last two mouse updates.
- */
-function getMouseDelta(){
-    var delta = new THREE.Vector3();
-    delta.x = mouse.x - mouseLast.x;
-    delta.y = mouse.y - mouseLast.y;
-
-    return delta;
-}
 
 function getMouseDeltaInWorld(){
     // Get mouse delta on gl space (-1, 1) x (-1, 1)
@@ -161,124 +113,6 @@ function getMouseDeltaInWorld(){
 
     return delta;
 }
-
-/////////////////////////////// Camera Methods /////////////////////////////////
-
-
-var centerAxis = new THREE.AxesHelper(1);
-scene.add(centerAxis);
-
-var center = new THREE.Vector3(0, 0, 0);
-
-
-function translateCamera(distance){
-
-    scene.translateX(distance.x);
-    center.x += -distance.x;
-
-    scene.translateY(distance.y);
-    center.y += -distance.y;
-
-    scene.translateZ(distance.z);
-    center.z += -distance.z;
-
-    centerAxis.position.set(center.x, center.y, center.z);
-}
-
-function rotateCameraAroundObject(distance){
-
-    // Create a quaternion for horizontal rotation
-    var horizontalQuaternion = new THREE.Quaternion().setFromAxisAngle(camera.up, Math.PI*distance.x);
-
-    // Compute the axis for overhead rotation
-    var centerVector = new THREE.Vector3().subVectors(camera.position, center).normalize();
-    var horizontalAxis = new THREE.Vector3().crossVectors(camera.up, centerVector).normalize();
-
-    // Create a quaternion for overhead rotation
-    var verticalQuaternion = new THREE.Quaternion().setFromAxisAngle(horizontalAxis, -Math.PI*distance.y);
-
-    // Combine the quaternions
-    var quaternion = new THREE.Quaternion().multiplyQuaternions(horizontalQuaternion, verticalQuaternion);
-
-    // Apply the quaternion to the scene
-    scene.applyQuaternion(quaternion);
-
-}
-
-function dollyCamera(distance){
-
-    camera.translateZ(dollySpeed * distance);
-
-    camera.updateProjectionMatrix();
-}
-
-/////////////////////////////// Event Handlers /////////////////////////////////
-
-function onMouseDown(event){
-    isMouseHeld = true;
-    whichMouse = event.which;
-    console.log("Mouse button pressed ( " + whichMouse + " ).");
-}
-
-function onMouseUp(event){
-    isMouseHeld = false;
-    console.log("Mouse button released.");
-}
-
-function onKeyDown(event){
-    if(!event.repeat){
-        if(event.code == SWITCH_KEY){
-            isCtrlHeld = true;
-            console.log("ctrl key pressed");
-        }
-    }
-
-}
-
-function onKeyUp(event){
-    if(event.code == SWITCH_KEY){
-        isCtrlHeld = false;
-        console.log("ctrl key released");
-    }
-}
-
-function onMouseMove(event){
-
-    updateMousePosition(event);
-
-    if(isMouseHeld){
-        var mouseDelta;
-
-        switch (whichMouse) {
-            case mouseButton.LEFT:
-                mouseDelta = getMouseDeltaInWorld();
-                translateCamera(mouseDelta);
-                break;
-            case mouseButton.RIGHT:
-                mouseDelta = getMouseDelta();
-                rotateCameraAroundObject(mouseDelta);
-                break;
-            case mouseButton.MIDDLE:
-                break;
-            default:
-                break;
-        }
-    }
-}
-
-function onMouseScroll(event){
-
-    var scrollDistance = event.wheelDelta;
-    dollyCamera(scrollDistance);
-
-}
-
-document.addEventListener("mousedown", onMouseDown, false);
-document.addEventListener("mouseup", onMouseUp, false);
-document.addEventListener("mousemove", onMouseMove, false);
-document.addEventListener("mousewheel", onMouseScroll, false);
-document.addEventListener("keydown", onKeyDown, false);
-document.addEventListener("keyup", onKeyUp, false);
 
 
 ///////////////////////////////// Main Loop ////////////////////////////////////
