@@ -41,7 +41,7 @@ class CameraController {
 
         // Set initial defaults.
         this.focus = new THREE.Vector3();
-        this.rotate = new THREE.Quaternion();
+        this.rotation = new THREE.Quaternion();
         this.orbitX = new THREE.Quaternion();
         this.orbitY = new THREE.Quaternion();
         this.pan = new THREE.Vector3();
@@ -61,6 +61,7 @@ class CameraController {
     update(){
         // Reset the camera
         this.camera.position.set(0, 0, 0);
+        this.camera.up.set(0, 1, 0);
         this.camera.rotation.set(0, 0, 0, 0);
 
         // Apply translations to place the camera where it should be
@@ -68,15 +69,21 @@ class CameraController {
         this.camera.translateY(this.pan.y);
         this.camera.translateZ(this.pan.z);
 
-        // Apply cummulative rotations to rotate camera around itself
-        this.camera.applyQuaternion(this.orbitX);
+        // Apply cummulative rotations to orbit camera around its origin
+        //this.camera.applyQuaternion(this.orbitX);
+        this.camera.applyQuaternion(this.orbitY);
 
-        // Apply dolly translation to move the camera back from it's origin
+        // Apply cummulative rotation to rotate camera around the Z axis
+        this.camera.up.applyQuaternion(this.rotation);
+
+        // Apply dolly translation to move the camera back from its origin
         this.camera.translateZ(this.dolly);
 
-        console.log(this.focus);
-        
-        //this.camera.lookAt(this.focus);
+        this.axisHelper.position.set(this.focus.x, this.focus.y, this.focus.z);
+
+        this.camera.lookAt(this.focus);
+
+        console.log(camera);
 
         // Update the projection matrix
         this.camera.updateProjectionMatrix();
@@ -88,24 +95,60 @@ class CameraController {
         if(this.isWheelDeltaFixed !== false) this.dolly += 0.1 * distance / this.wheelDelta;
         else this.dolly += this.wheelDelta;
 
-        //this.camera.position.setZ(this.dolly);
-        //console.log(camera);
-
-        //this.camera.updateProjectionMatrix();
-
         this.update();
     }
 
     orbitCamera(distance) {
+        // Compute the up vector
+        var up = new THREE.Vector3().copy(this.camera.up);
+        up.applyQuaternion(this.orbitX);
+        up.applyQuaternion(this.orbitY);
 
-        this.orbitX.multiply(new THREE.Quaternion().setFromAxisAngle(camera.up, Math.PI*distance.x));
+        // Build a new quaternion for horizontal rotation using the up vector of the camera 
+        // as the axis and 2PI*deltaX as the angle.
+        var horizontalRotation = new THREE.Quaternion().setFromAxisAngle(up, Math.PI*distance.x);
+        
+        // Compute the X axis for overhead rotation based on the up and focus direction vectors.
+        var centerVector = new THREE.Vector3().subVectors(this.camera.position, this.focus).normalize();
+        var horizontalAxis = new THREE.Vector3().crossVectors(up, centerVector).normalize();
+
+        // Build a new  quaternion for overhead rotation using the calculated axis with 
+        // 2PI*deltaY as the angle.
+        var overheadRotation = new THREE.Quaternion().setFromAxisAngle(horizontalAxis, Math.PI*distance.y);
+
+        console.log(centerVector);
+        console.log(camera.up);
+
+        // Apply the rotations to the orbit rotation trackes.
+        this.orbitX.multiply(horizontalRotation);
+        this.orbitY.multiply(overheadRotation);
+        
+        this.update();
+    }
+
+    rotateCamera(distance) {
+        // First compute the rotation angle.
+        var firstVector = new THREE.Vector3().copy(this.mouseLast);
+        var secondVector = new THREE.Vector3().addVectors(this.mouseLast, distance);
+        var orientation = computeOrientation(firstVector.x, firstVector.y, secondVector.x, secondVector.y, 0, 0);
+        var angle = orientation * secondVector.angleTo(firstVector);
+
+        // Then compute the axis
+        var axis = new THREE.Vector3().subVectors(this.camera.position, this.focus).normalize();
+
+        // Build a quaternion from the calculated axis and angle
+        var rotationQuaternion = new THREE.Quaternion().setFromAxisAngle(axis, angle);
+
+        // Multiply the quaternion into the global cummulative rotation.
+        this.rotation.multiply(rotationQuaternion);
+
+        console.log(this.rotation);
 
         this.update();
     }
 
     panCamera(distance) {
         // Compute panning on Y axis based on the vertical up vector.
-        console.log(this.camera);
         var yPan = new THREE.Vector3().copy(this.camera.up);
         yPan.multiplyScalar(distance.y);
 
@@ -122,9 +165,6 @@ class CameraController {
 
         this.focus.add(xPan);
         this.focus.add(yPan);
-
-        this.axisHelper.position.add(xPan);
-        this.axisHelper.position.add(yPan);
 
         this.update();
     }
@@ -168,6 +208,8 @@ class CameraController {
                 case mouseButton.RIGHT:
                     this.state = STATE.PAN;
                     break;
+                case mouseButton.MIDDLE:
+                    this.state = STATE.ROTATE;
                 default:
                     break;
             }
@@ -182,15 +224,17 @@ class CameraController {
     onMouseMove(event){
 
         this.updateMousePosition(event);
+        var delta = this.getMouseDelta();
 
         switch (this.state) {
             case STATE.ORBIT:
-                var delta = this.getMouseDelta();
                 this.orbitCamera(delta);
                 break;
             case STATE.PAN:
-                var delta = this.getMouseDelta();
                 this.panCamera(delta);
+                break;
+            case STATE.ROTATE:
+                this.rotateCamera(delta);
                 break;
             default:
                 break;
