@@ -1,5 +1,7 @@
 /*jshint esversion: 6 */
 
+var rendererMargin = {width: 10, height:10};
+
 // Scene Variables
 var canvasWidth, canvasHeight;
 var scene, camera, renderer, controls, loader;
@@ -31,8 +33,8 @@ function init(){
     scene.add(directionlight);
 
     // Get width and height of the window and make a canvas 10 px smaller (5 px margins).
-    canvasWidth = window.innerWidth - 10;
-    canvasHeight = window.innerHeight- 10;
+    canvasWidth = window.innerWidth - rendererMargin.width;
+    canvasHeight = window.innerHeight - rendererMargin.height - 100;
 
     // Create the camera
     var aspect = canvasWidth/canvasHeight;
@@ -54,7 +56,7 @@ function init(){
     // Set an identifier to the renderer in case it needs to be retrieved later.
     renderer.domElement.setAttribute('id', 'canvas');
     // Append the renderer to the html body.
-    document.body.appendChild(renderer.domElement);
+    document.getElementById('canvas').appendChild(renderer.domElement);
 
     /////// Build the scene
     loader = new THREE.OBJLoader();
@@ -96,24 +98,14 @@ function init(){
     //controls = new THREE.OrbitControls(camera);
 }
 
-init();
-
-/////////////////////////////// Mouse Position /////////////////////////////////
-
-function getMouseDeltaInWorld(){
-    // Get mouse delta on gl space (-1, 1) x (-1, 1)
-    var mouseDelta = getMouseDelta();
-
-    // Multiply by distance from xy plane to preserve relative position
-    var delta = new THREE.Vector3(
-        mouseDelta.x * camera.position.z * canvasWidth/canvasHeight,
-        mouseDelta.y * camera.position.z,
-        0.0
-    );
-
-    return delta;
+function logEvent(event){
+    console.log(event);
 }
 
+document.addEventListener("keyframe", logEvent, false);
+document.addEventListener("slider", logEvent, false);
+
+init();
 
 ///////////////////////////////// Main Loop ////////////////////////////////////
 
@@ -139,8 +131,8 @@ function getMouseDeltaInWorld(){
 
 // Optimized window resize event handler
 window.addEventListener("optimizedResize", function() {
-    canvasWidth = window.innerWidth - 10;
-    canvasHeight = window.innerHeight - 10;
+    canvasWidth = window.innerWidth - rendererMargin.width;
+    canvasHeight = window.innerHeight - rendererMargin.height - 100;
 
     var aspect = canvasWidth / canvasHeight;
     camera.left = -frustumSize * aspect / 2;

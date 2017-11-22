@@ -56,6 +56,7 @@ class CameraController {
         // Debug
         this.axisHelper = new THREE.AxisHelper();
         scene.add(this.axisHelper);
+        this.scene = scene;
     }
 
     update(){
@@ -70,8 +71,10 @@ class CameraController {
         this.camera.translateZ(this.pan.z);
 
         // Apply cummulative rotations to orbit camera around its origin
-        //this.camera.applyQuaternion(this.orbitX);
+        this.camera.applyQuaternion(this.orbitX);
+        //this.axisHelper.applyQuaternion(this.orbitX);
         this.camera.applyQuaternion(this.orbitY);
+        //this.axisHelper.applyQuaternion(this.orbitY);
 
         // Apply cummulative rotation to rotate camera around the Z axis
         this.camera.up.applyQuaternion(this.rotation);
@@ -82,8 +85,6 @@ class CameraController {
         this.axisHelper.position.set(this.focus.x, this.focus.y, this.focus.z);
 
         this.camera.lookAt(this.focus);
-
-        console.log(camera);
 
         // Update the projection matrix
         this.camera.updateProjectionMatrix();
@@ -99,25 +100,17 @@ class CameraController {
     }
 
     orbitCamera(distance) {
-        // Compute the up vector
-        var up = new THREE.Vector3().copy(this.camera.up);
-        up.applyQuaternion(this.orbitX);
-        up.applyQuaternion(this.orbitY);
-
         // Build a new quaternion for horizontal rotation using the up vector of the camera 
         // as the axis and 2PI*deltaX as the angle.
-        var horizontalRotation = new THREE.Quaternion().setFromAxisAngle(up, Math.PI*distance.x);
+        var horizontalRotation = new THREE.Quaternion().setFromAxisAngle(this.camera.up, Math.PI*distance.x);
         
         // Compute the X axis for overhead rotation based on the up and focus direction vectors.
-        var centerVector = new THREE.Vector3().subVectors(this.camera.position, this.focus).normalize();
-        var horizontalAxis = new THREE.Vector3().crossVectors(up, centerVector).normalize();
+        var lookAtDirection = new THREE.Vector3().subVectors(this.camera.position, this.focus).normalize();
+        var horizontalAxis = new THREE.Vector3().crossVectors(this.camera.up, lookAtDirection).normalize();
 
         // Build a new  quaternion for overhead rotation using the calculated axis with 
         // 2PI*deltaY as the angle.
         var overheadRotation = new THREE.Quaternion().setFromAxisAngle(horizontalAxis, Math.PI*distance.y);
-
-        console.log(centerVector);
-        console.log(camera.up);
 
         // Apply the rotations to the orbit rotation trackes.
         this.orbitX.multiply(horizontalRotation);
@@ -131,7 +124,7 @@ class CameraController {
         var firstVector = new THREE.Vector3().copy(this.mouseLast);
         var secondVector = new THREE.Vector3().addVectors(this.mouseLast, distance);
         var orientation = computeOrientation(firstVector.x, firstVector.y, secondVector.x, secondVector.y, 0, 0);
-        var angle = orientation * secondVector.angleTo(firstVector);
+        var angle = (-1) * orientation * secondVector.angleTo(firstVector);
 
         // Then compute the axis
         var axis = new THREE.Vector3().subVectors(this.camera.position, this.focus).normalize();
@@ -141,8 +134,6 @@ class CameraController {
 
         // Multiply the quaternion into the global cummulative rotation.
         this.rotation.multiply(rotationQuaternion);
-
-        console.log(this.rotation);
 
         this.update();
     }
@@ -210,6 +201,7 @@ class CameraController {
                     break;
                 case mouseButton.MIDDLE:
                     this.state = STATE.ROTATE;
+                    break;
                 default:
                     break;
             }
@@ -264,41 +256,3 @@ class CameraController {
     }
     
 }
-
-/////////////////////////////// Camera Methods /////////////////////////////////
-
-/*
-function translateCamera(distance){
-
-    scene.translateX(distance.x);
-    center.x += -distance.x;
-
-    scene.translateY(distance.y);
-    center.y += -distance.y;
-
-    scene.translateZ(distance.z);
-    center.z += -distance.z;
-
-    centerAxis.position.set(center.x, center.y, center.z);
-}
-
-function rotateCameraAroundObject(distance){
-
-    // Create a quaternion for horizontal rotation
-    var horizontalQuaternion = new THREE.Quaternion().setFromAxisAngle(camera.up, Math.PI*distance.x);
-
-    // Compute the axis for overhead rotation
-    var centerVector = new THREE.Vector3().subVectors(camera.position, center).normalize();
-    var horizontalAxis = new THREE.Vector3().crossVectors(camera.up, centerVector).normalize();
-
-    // Create a quaternion for overhead rotation
-    var verticalQuaternion = new THREE.Quaternion().setFromAxisAngle(horizontalAxis, -Math.PI*distance.y);
-
-    // Combine the quaternions
-    var quaternion = new THREE.Quaternion().multiplyQuaternions(horizontalQuaternion, verticalQuaternion);
-
-    // Apply the quaternion to the scene
-    scene.applyQuaternion(quaternion);
-
-}
-*/
