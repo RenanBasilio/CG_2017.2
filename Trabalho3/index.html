@@ -45,7 +45,11 @@
         <script>
             if (!window.THREE){
                 document.write("<script type=\"text\/javascript\" src=\"node_modules/three/build/three.js\"><\/script>");
-                console.warn("Failed to load from CDN. Using local copy instead");
+                console.warn("Failed to load THREE from CDN. Using local copy instead.");
+            }
+            if (!window.d3){
+                document.write("<script type=\"text\/javascript\" src=\"node_modules/d3/build/d3.min.js\"><\/script>");
+                console.warn("Failed to load d3 from CDN. Using local copy instead.");
             }
         </script>
         <script type="text/javascript" src="src/three_modules/OBJLoader.js"></script>
@@ -59,7 +63,7 @@
     </head>
     <body>
         <div id='canvas'></div>
-        <svg id='slider' width="90%" height="10%" viewBox="-50, -30, 1100, 300" preserveAspectRatio="YMid"  oncontextmenu="return false"></svg>
+        <svg id='slider' width="90%" height="10%" viewBox="-50, -30, 1100, 300" preserveAspectRatio="xMidYMid"  oncontextmenu="return false"></svg>
         <script type="text/javascript" src="src/index.js"></script>
         <script type="text/javascript" src="src/DragSlider.js"></script>
     </body>
