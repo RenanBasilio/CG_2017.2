@@ -77,17 +77,16 @@ for (var i = 0; i <= 100; i++){
     .on("click", onCircleClick);
 }
 
-/*
-slider.transition() // Gratuitous intro!
-.duration(750)
-.tween("hue", function() {
-  var i = d3.interpolate(0, 70);
-  return function(t) { hue(i(t)); };
-});
-*/
+var lastValue = 0;
 
 function hue(h) {
+
     handle.attr("cx", x(h));
-    document.dispatchEvent(new CustomEvent("slider", {detail: {frame: Math.round(x(h)/10)}}));
-//svg.style("background-color", d3.hsl(h, 0.8, 0.8));
+
+    var value = Math.round(x(h)/10);
+
+    if(value != lastValue){
+        document.dispatchEvent(new CustomEvent("slider", {detail: {frame: value}}));
+        lastValue = value;
+    }
 }

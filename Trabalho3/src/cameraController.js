@@ -18,7 +18,7 @@ var STATE = Object.freeze({
     ROTATE: 1,
     PAN: 2,
     DOLLY: 3
-})
+});
 
 class CameraController {
     /**
@@ -239,7 +239,7 @@ class CameraController {
             }
             else if(Math.abs(this.wheelDeltaLast) === Math.abs(this.wheelDelta)){
                 this.isWheelDeltaFixed = true;
-                this.mouseWheelDelta = Math.abs(event.wheelDelta)
+                this.mouseWheelDelta = Math.abs(event.wheelDelta);
             }
             else{
                 this.isWheelDeltaFixed = false;
