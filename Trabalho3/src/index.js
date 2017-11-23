@@ -33,8 +33,9 @@ function init(){
     scene.add(directionlight);
 
     // Get width and height of the window and make a canvas 10 px smaller (5 px margins).
-    canvasWidth = window.innerWidth - rendererMargin.width;
-    canvasHeight = window.innerHeight - rendererMargin.height - 100;
+    var canvas = window.getComputedStyle(document.getElementById("canvas"));
+    canvasWidth = parseInt(canvas.width, 10);
+    canvasHeight = parseInt(canvas.height, 10);
 
     // Create the camera
     var aspect = canvasWidth/canvasHeight;
@@ -54,7 +55,7 @@ function init(){
     // Disable right click menu (to allow for using the right mouse button as a control).
     renderer.domElement.setAttribute('oncontextmenu', "return false;");
     // Set an identifier to the renderer in case it needs to be retrieved later.
-    renderer.domElement.setAttribute('id', 'canvas');
+    renderer.domElement.setAttribute('id', 'three-canvas');
     // Append the renderer to the html body.
     document.getElementById('canvas').appendChild(renderer.domElement);
 
@@ -71,7 +72,9 @@ function init(){
     var onError = function( xhr ){
         console.log("Failed to load object. Will use a cube instead.");
         var cubegeo = new THREE.BoxGeometry(1, 1, 1);
-        var cubemat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        cubegeo.computeFaceNormals();
+        cubegeo.computeVertexNormals();
+        var cubemat = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
         var cube = new THREE.Mesh(cubegeo, cubemat);
         scene.add(cube);
     };
@@ -94,8 +97,6 @@ function init(){
     windowInitialHeight = window.innerHeight;
 
     controls = new CameraController(camera, scene, renderer.domElement);
-
-    //controls = new THREE.OrbitControls(camera);
 }
 
 function logEvent(event){
@@ -131,8 +132,10 @@ init();
 
 // Optimized window resize event handler
 window.addEventListener("optimizedResize", function() {
-    canvasWidth = window.innerWidth - rendererMargin.width;
-    canvasHeight = window.innerHeight - rendererMargin.height - 100;
+    // Get width and height of the window and make a canvas 10 px smaller (5 px margins).
+    var canvas = window.getComputedStyle(document.getElementById("canvas"));
+    canvasWidth = parseInt(canvas.width, 10);
+    canvasHeight = parseInt(canvas.height, 10);
 
     var aspect = canvasWidth / canvasHeight;
     camera.left = -frustumSize * aspect / 2;

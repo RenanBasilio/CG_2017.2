@@ -19,14 +19,25 @@
         <script type="text/javascript" src="src/CameraController.js"></script>
         <script type="text/javascript" src="src/util.js"></script>
         <style>
-            body {margin: 0; margin: 5px; overflow: hidden; }
+            body {margin: 5px; overflow: hidden; }
             canvas {width: 100%; height: 100%;}
             svg {width: 100%; height: 100%}
         </style>
     </head>
     <body>
         <div id='canvas'></div>
-        <svg id='slider' width="90%" height="10%" viewBox="-50, -30, 1100, 300" preserveAspectRatio="xMidYMid"  oncontextmenu="return false"></svg>
+        <div id="controls">
+            <div id='slider-div'>
+                <svg id='slider' viewBox="-5, -30, 1050, 300" oncontextmenu="return false"></svg>
+            </div>
+            <div id="button-controls">
+                <form>
+                    <input type="button" name="keyframe" value="Toggle Keyframe" onclick="toggleKeyframe()">
+                    <br><br>
+                    <input type="checkbox" name="animate" value="auto-animate" onchange="toggleAnimate()">Animate
+                </form>
+            </div>
+        </div>
         <script type="text/javascript" src="src/index.js"></script>
         <script type="text/javascript" src="src/DragSlider.js"></script>
     </body>
