@@ -20,6 +20,22 @@ var STATE = Object.freeze({
     DOLLY: 3
 });
 
+class CameraSaveState {
+    /**
+     * 
+     * @param {THREE.Vector3} focus 
+     * @param {THREE.Quaternion} rotation 
+     * @param {THREE.Vector3} pan 
+     * @param {Number} dolly 
+     */
+    constructor(focus, rotation, pan, dolly){
+        this.focus = focus.clone();
+        this.rotation = rotation.clone();
+        this.pan = pan.clone();
+        this.dolly = dolly;
+    }
+}
+
 class CameraController {
     /**
      * Build a new camera controller.
@@ -83,6 +99,28 @@ class CameraController {
         this.camera.updateProjectionMatrix();
 
         //console.log(new THREE.Vector3().subVectors(this.camera.position, this.focus).length());
+    }
+
+    /**
+     * This method saves the camera's current state in a CameraSaveState struct and returns it.
+     * @returns {CameraSaveState}
+     */
+    saveState(){
+        var state = new CameraSaveState(this.focus, this.rotation, this.pan, this.dolly);
+        return state;
+    }
+
+    /**
+     * This method sets the camera's state from the values saved in a CameraSaveState struct and updates the view.
+     * @param {CameraSaveState} state 
+     */
+    setState(state){
+        this.focus.copy(state.focus);
+        this.rotation.copy(state.rotation);
+        this.pan.copy(state.pan);
+        this.dolly = state.dolly;
+
+        this.update();
     }
 
     //////////////////////////////// Camera Controls ////////////////////////////////
