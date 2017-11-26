@@ -7,6 +7,7 @@ var canvasWidth, canvasHeight;
 var scene, camera, renderer, controls, loader;
 var frustumSize = 1000;
 var FOV = 75;
+var startZ = 3;
 
 // Variables for screen resizing
 var tanFOV, windowInitialHeight;
@@ -92,13 +93,13 @@ function init(){
     tanFOV = Math.tan( ( ( Math.PI / 180 ) * camera.fov / 2 ) );
     windowInitialHeight = window.innerHeight;
 
-    controls = new CameraController(camera, scene, renderer.domElement);
-    controls.dollyCamera(3);
+    controls = new CameraController(camera, renderer.domElement);
+    controls.dollyCamera(startZ);
 }
 
 init();
 
-///////////////////////// Interaction Event Handlers ///////////////////////////
+//////////////////////// Button Control Event Handlers //////////////////////////
 
 var keyframes = {};
 
@@ -111,15 +112,20 @@ function sliderEventHandler(event){
     if (keyframes[event.detail.frame]) controls.setState(keyframes[event.detail.frame]);
 }
 
-document.addEventListener("keyframe", keyframeEventHandler, false);
-document.addEventListener("slider", sliderEventHandler, false);
-
 var keyframeSet = false;
 var keyframeState;
 function toggleKeyframe(){
     if (!keyframeSet) {keyframeState = controls.saveState(); keyframeSet = true;}
     else controls.setState(keyframeState);
 }
+
+function resetCamera(event){
+    controls.reset(true);
+    controls.dollyCamera(startZ);
+}
+
+document.addEventListener("keyframe", keyframeEventHandler, false);
+document.addEventListener("slider", sliderEventHandler, false);
 
 ///////////////////////////////// Main Loop ////////////////////////////////////
 

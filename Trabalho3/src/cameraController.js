@@ -41,7 +41,7 @@ class CameraController {
      * Build a new camera controller.
      * @param {THREE.PerspectiveCamera} camera The camera to use for controlling
      */
-    constructor(camera, scene, domElement){
+    constructor(camera, domElement){
 
         // Initialize Scope
         this.camera = camera;
@@ -73,11 +73,26 @@ class CameraController {
         this.scene = scene;
     }
 
-    update(){
-        // Reset the camera
+    /**
+     * This method resets the camera position and, in case of a hard reset, the defaults for focus, rotation, pan and dolly.
+     * @param {Boolean} hard Whether this is a hard reset. This causes update to be called, to reflect the new state.
+     */
+    reset(hard = false){
         this.camera.position.set(0, 0, 0);
         this.camera.up.set(0, 1, 0);
         this.camera.rotation.set(0, 0, 0, 0);
+
+        if(hard){
+            this.focus.set(0, 0, 0);
+            this.rotation.set(0, 0, 0, 1);
+            this.pan.set(0, 0, 0);
+            this.dolly = 0;
+        }
+    }
+
+    update(){
+        // Reset the camera
+        this.reset();
 
         // Apply translations to place the camera where it should be
         this.camera.translateX(this.pan.x);
@@ -97,8 +112,6 @@ class CameraController {
 
         // Update the projection matrix
         this.camera.updateProjectionMatrix();
-
-        //console.log(new THREE.Vector3().subVectors(this.camera.position, this.focus).length());
     }
 
     /**
@@ -119,6 +132,29 @@ class CameraController {
         this.rotation.copy(state.rotation);
         this.pan.copy(state.pan);
         this.dolly = state.dolly;
+
+        this.update();
+    }
+
+    /**
+     * This method sets the camera state to the interpolated value between two states with a parameter alpha.
+     * alpha = 0 will be state1, and alpha = 1 will be state2.
+     * @param {CameraSaveState} state1 The state when alpha = 0.
+     * @param {CameraSaveState} state2 The state when alpha = 1.
+     * @param {Number} alpha The parameter to interpolate the position. Must be a number between 0 and 1.
+     */
+    setFromInterpolateStates(state1, state2, alpha){
+        // Set focus and pan to the linear interpolated values.
+        this.focus.lerpVectors(state1.focus, state2.focus, alpha);
+        this.pan.lerpVectors(state1.pan, state2.pan, alpha);
+
+        // Compute slerp for the pair of quaternions and set it.
+        var quaternion = state1.rotation.clone();
+        quaternion.slerp(state2.rotation);
+        this.rotation.copy(quaternion);
+
+        var dolly = (alpha * state1.dolly) + ((1 - alpha) * state2.dolly);
+        this.dolly = dolly;
 
         this.update();
     }

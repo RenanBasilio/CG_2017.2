@@ -13,8 +13,8 @@
 #slider-div {
   width: 90vw;
   height: auto;
-  float: left;
   margin: 5px 0px 5px 0px;
+  float: left;
 }
 
 #button-controls {
@@ -22,7 +22,16 @@
   margin: 5px;
   padding: 5px;
   line-height: 5px;
-  white-space: nowrap;
+}
+
+input[type="button"]{
+  width: 8vw;
+  margin: 5px;
+}
+
+input[type="checkbox"]{
+  margin: 7.5px;
+  transform: scale(1.5);
 }
 
 .ticks {
