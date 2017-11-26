@@ -43,7 +43,7 @@ class CameraController {
         this.focus = new THREE.Vector3();
         this.rotation = new THREE.Quaternion();
         this.pan = new THREE.Vector3();
-        this.dolly = 3;
+        this.dolly = 0;
 
         // Add relevant event listeners
         domElement.addEventListener("mousedown", this.onMouseDown.bind(this), false);
@@ -82,14 +82,13 @@ class CameraController {
         // Update the projection matrix
         this.camera.updateProjectionMatrix();
 
-        console.log(new THREE.Vector3().subVectors(this.camera.position, this.focus).length());
+        //console.log(new THREE.Vector3().subVectors(this.camera.position, this.focus).length());
     }
 
     //////////////////////////////// Camera Controls ////////////////////////////////
 
     dollyCamera(distance) {
-        if(this.isWheelDeltaFixed !== false) this.dolly += 0.1 * distance / this.wheelDelta;
-        else this.dolly += this.wheelDelta;
+        this.dolly += distance;
 
         this.update();
     }
@@ -183,9 +182,12 @@ class CameraController {
     /////////////////////////////// Event Handlers /////////////////////////////////
 
     onMouseDown(event){
-        console.log("Mouse button pressed.");
+        //console.log("Mouse button pressed.");
         if(event.ctrlKey){
             this.state = STATE.ROTATE;
+        }
+        if(event.shiftKey){
+            this.state = STATE.DOLLY;
         }
         else{
             switch (event.which) {
@@ -205,7 +207,7 @@ class CameraController {
     }
 
     onMouseUp(event){
-        console.log("Mouse button released.");
+        //console.log("Mouse button released.");
         this.state = STATE.NONE;
     }
 
@@ -223,6 +225,9 @@ class CameraController {
                 break;
             case STATE.ROTATE:
                 this.rotateCamera(delta);
+                break;
+            case STATE.DOLLY:
+                this.dollyCamera(delta.y);
                 break;
             default:
                 break;
@@ -246,7 +251,17 @@ class CameraController {
             }
         }
 
-        var scrollDistance = event.wheelDelta;
+        // Calculate the scroll distance
+        var scrollDistance;
+        // If the delta was determined to be fixed (or undefined), then the dolly distance is 10% of a unit.
+        if ( this.isWheelDeltaFixed !== false) {
+            scrollDistance = 0.1 * event.wheelDelta / this.wheelDelta;
+        }
+        // Otherwise, if the delta is high resolution, then the dolly distance is 0.1% times the distance scolled.
+        else{
+            scrollDistance = 0.001 * event.wheelDelta;
+        }
+
         this.dollyCamera(scrollDistance);
 
     }

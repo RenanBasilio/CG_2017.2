@@ -40,10 +40,6 @@ function init(){
     // Create the camera
     var aspect = canvasWidth/canvasHeight;
     camera = new THREE.PerspectiveCamera(FOV, aspect, 0.1, 1000);
-    // Set camera at 5 units away from the origin on the Z axis.
-    camera.position.set(0, 0, 3);
-    // Set camera to look at origin.
-    camera.lookAt(new THREE.Vector3(0,0,0));
 
     // Set up webgl renderer
     renderer = new THREE.WebGLRenderer();
@@ -97,6 +93,7 @@ function init(){
     windowInitialHeight = window.innerHeight;
 
     controls = new CameraController(camera, scene, renderer.domElement);
+    controls.dollyCamera(3);
 }
 
 function logEvent(event){
