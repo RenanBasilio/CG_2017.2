@@ -96,14 +96,30 @@ function init(){
     controls.dollyCamera(3);
 }
 
-function logEvent(event){
-    console.log(event);
+init();
+
+///////////////////////// Interaction Event Handlers ///////////////////////////
+
+var keyframes = {};
+
+function keyframeEventHandler(event){
+    if (event.detail.set) keyframes[event.detail.frame] = controls.saveState();
+    else delete keyframes[event.details.frame];
 }
 
-document.addEventListener("keyframe", logEvent, false);
-document.addEventListener("slider", logEvent, false);
+function sliderEventHandler(event){
+    if (keyframes[event.detail.frame]) controls.setState(keyframes[event.detail.frame]);
+}
 
-init();
+document.addEventListener("keyframe", keyframeEventHandler, false);
+document.addEventListener("slider", sliderEventHandler, false);
+
+var keyframeSet = false;
+var keyframeState;
+function toggleKeyframe(){
+    if (!keyframeSet) {keyframeState = controls.saveState(); keyframeSet = true;}
+    else controls.setState(keyframeState);
+}
 
 ///////////////////////////////// Main Loop ////////////////////////////////////
 

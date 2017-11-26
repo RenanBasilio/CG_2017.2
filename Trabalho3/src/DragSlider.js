@@ -12,8 +12,6 @@ var slider = svg.append("g")
 .attr("class", "slider")
 .attr("transform", "translate(" + margin.left + "," + height / 2 + ")");
 
-slider.append("viewBox");
-
 var circleState = new Array(100);
 
 for (var i = 0; i <= 100; i++){
@@ -63,6 +61,7 @@ slider.insert("g", ".track-overlay")
 .text(function(d) { return d ; });
 
 var handle = slider.insert("circle", ".track-overlay")
+.attr("id", 'handle')
 .attr("class", "handle")
 .attr("r", 9);
 
