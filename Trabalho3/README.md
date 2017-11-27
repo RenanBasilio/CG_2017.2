@@ -21,7 +21,7 @@ O repositório referente ao projeto pode se encontra em https://github.com/Renan
 Para controle de câmera com os 6 graus de liberdade propostos (rotação em torno do objeto, rotação local e translação em 3 eixos) foram utilizados os seguintes controles:
 * Translação: **_right click and drag_**
 * Rotação Orbital: **_left click and drag_**
-* Rotação Local: **_ctrl + left click and drag_**
-* Dolly: **_mouse wheel_** ou **_shift + left click and drag_**
+* Rotação Local: **_mouse wheel click_** ou **_ctrl + left click and drag_**
+* Dolly: **_mouse wheel scroll_** ou **_shift + left click and drag_**
 
 ## Funcionalidades Implementadas
