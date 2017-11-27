@@ -242,6 +242,7 @@ function animate() {
     requestAnimationFrame( animate );
     if(auto_animate)
     {
+        document.dispatchEvent(new CustomEvent("auto-anim", {detail: {frame: currentAnimFrame}}));
         setFrame(currentAnimFrame/frameRate);
         currentAnimFrame++;
         if(currentAnimFrame > (100*frameRate)) currentAnimFrame = 0;

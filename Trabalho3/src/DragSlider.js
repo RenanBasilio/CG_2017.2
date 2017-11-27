@@ -89,3 +89,9 @@ function hue(h) {
         lastValue = value;
     }
 }
+
+function animEventHandler(event){
+    handle.attr("cx", x(event.detail.frame / 10));
+}
+
+document.addEventListener("auto-anim", animEventHandler, false);
