@@ -99,24 +99,78 @@ function init(){
 
 init();
 
-//////////////////////// Button Control Event Handlers //////////////////////////
+//////////////////////////// Animation Methods //////////////////////////////////
 
 var keyframes = {};
 
+function rebuildTimeline(){
+    var keys = Object.keys(keyframes).sort();
+    // If there is more than one keyframe set
+    if (keys.length > 1){
+        for (var i = 0; i < keys.length; i++){
+            // If element is first in array, this is the first frame of animation.
+            if(!keys[i-1]) {
+                keyframes[keys[i]].prev = null;
+                keyframes[keys[i]].next = keyframes[keys[i+1]];
+            }
+            // If element is last in array, this is the last frame of animation
+            else if (!keys[i+1]) {
+                keyframes[keys[i]].prev = keyframes[keys[i-1]];;
+                keyframes[keys[i]].next = null;
+            }
+            // Otherwise, this is an ordinary frame
+            else{
+                keyframes[keys[i]].prev = keyframes[keys[i-1]];
+                keyframes[keys[i]].next = keyframes[keys[i+1]];
+            }
+        }
+    }
+}
+
+var currentCamera = null;
+
+function setFrame(frame){
+    // If the requested frame is a keyframe that exists in the array, set the camera to it
+    if(keyframes[frame]){
+        currentCamera = keyframes[frame];
+    }
+    // If currentCamera is set
+    if (currentCamera !== null){
+        // If the frame requested comes after the set frame, set to interpolated between frame and next frame
+        if(frame > currentCamera.frame && currentCamera.next !== null) {
+            controls.setFromInterpolateStates(
+                currentCamera, 
+                currentCamera.next, 
+                (frame - currentCamera.frame)/(currentCamera.next.frame - currentCamera.frame));
+        }
+        // If the frame requested comes before the set frame, set to interpolated between frame and last frame
+        else if (frame < currentCamera.frame & currentCamera.prev !== null){
+            controls.setFromInterpolateStates(
+                currentCamera,
+                currentCamera.prev,
+                (currentCamera.frame - frame)/(currentCamera.frame - currentCamera.prev.frame));
+        }
+        // If the requested frame is the current frame, just set to it
+        else controls.setState(currentCamera);
+    }
+}
+
+
+//////////////////////// Button Control Event Handlers //////////////////////////
+
 function keyframeEventHandler(event){
-    if (event.detail.set) keyframes[event.detail.frame] = controls.saveState();
+    if (event.detail.set) {
+        var state = controls.saveState();
+        state.frame = event.detail.frame;
+        keyframes[event.detail.frame] = state;
+    }
     else delete keyframes[event.details.frame];
+
+    rebuildTimeline();
 }
 
 function sliderEventHandler(event){
-    if (keyframes[event.detail.frame]) controls.setState(keyframes[event.detail.frame]);
-}
-
-var keyframeSet = false;
-var keyframeState;
-function toggleKeyframe(){
-    if (!keyframeSet) {keyframeState = controls.saveState(); keyframeSet = true;}
-    else controls.setState(keyframeState);
+    setFrame(event.detail.frame);
 }
 
 function resetCamera(event){

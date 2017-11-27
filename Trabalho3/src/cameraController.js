@@ -33,6 +33,9 @@ class CameraSaveState {
         this.rotation = rotation.clone();
         this.pan = pan.clone();
         this.dolly = dolly;
+        this.prev = null;
+        this.next = null;
+        this.frame = null;
     }
 }
 
@@ -150,7 +153,7 @@ class CameraController {
 
         // Compute slerp for the pair of quaternions and set it.
         var quaternion = state1.rotation.clone();
-        quaternion.slerp(state2.rotation);
+        quaternion.slerp(state2.rotation, alpha);
         this.rotation.copy(quaternion);
 
         var dolly = (alpha * state1.dolly) + ((1 - alpha) * state2.dolly);
@@ -260,7 +263,7 @@ class CameraController {
         if(event.ctrlKey){
             this.state = STATE.ROTATE;
         }
-        if(event.shiftKey){
+        else if(event.shiftKey){
             this.state = STATE.DOLLY;
         }
         else{
