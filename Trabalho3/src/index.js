@@ -8,6 +8,7 @@ var scene, camera, renderer, controls, loader;
 var frustumSize = 1000;
 var FOV = 75;
 var startZ = 3;
+var frameRate = 10;
 
 // Variables for screen resizing
 var tanFOV, windowInitialHeight;
@@ -164,8 +165,9 @@ function keyframeEventHandler(event){
         state.frame = event.detail.frame;
         keyframes[event.detail.frame] = state;
     }
-    else delete keyframes[event.details.frame];
-
+    else {
+        delete keyframes[event.detail.frame];
+    }
     rebuildTimeline();
 }
 
@@ -173,9 +175,17 @@ function sliderEventHandler(event){
     setFrame(event.detail.frame);
 }
 
+var auto_animate = false;
+
+function toggleAnimate(checkbox){
+    auto_animate = checkbox.checked;
+}
+
 function resetCamera(event){
     controls.reset(true);
     controls.dollyCamera(startZ);
+    document.getElementById("anim-chbox").checked = false;
+    auto_animate = false;
 }
 
 document.addEventListener("keyframe", keyframeEventHandler, false);
@@ -226,8 +236,17 @@ window.addEventListener("optimizedResize", function() {
     renderer.render( scene, camera );
 });
 
+var currentAnimFrame = 0;
+
 function animate() {
     requestAnimationFrame( animate );
+    if(auto_animate)
+    {
+        setFrame(currentAnimFrame/frameRate);
+        currentAnimFrame++;
+        if(currentAnimFrame > (100*frameRate)) currentAnimFrame = 0;
+    }
+    else currentAnimFrame = 0;
     renderer.render( scene, camera );
 }
 animate();

@@ -213,14 +213,14 @@ class CameraController {
     panCamera(distance) {
         // Compute panning on Y axis based on the vertical up vector.
         var yPan = new THREE.Vector3().copy(this.camera.up);
-        yPan.multiplyScalar(distance.y);
+        yPan.multiplyScalar(distance.y).multiplyScalar(3);
 
         // Compute X axis for panning based on up vector and focus direction.
         var centerVector = new THREE.Vector3().subVectors(this.camera.position, this.focus).normalize();
         var horizontalAxis = new THREE.Vector3().crossVectors(this.camera.up, centerVector).normalize();
 
         // Compute panning on X axis based on the horizontal axis.
-        var xPan = horizontalAxis.multiplyScalar(distance.x);
+        var xPan = horizontalAxis.multiplyScalar(distance.x).multiplyScalar(3);
 
         // Join X and Y panning values to global cummulative vector.
         this.pan.add(xPan);
