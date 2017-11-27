@@ -1,0 +1,17 @@
+{
+  "name": "trabalho3",
+  "version": "1.0.0",
+  "description": "Trabalho 3 da disciplina de Computação Gráfica da UFRJ em 2017-2",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "live-server"
+  },
+  "author": "Renan Basilio",
+  "license": "ISC",
+  "dependencies": {
+    "d3": "^4.11.0",
+    "live-server": "^1.2.0",
+    "three": "^0.88.0"
+  }
+}
