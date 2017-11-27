@@ -156,7 +156,7 @@ class CameraController {
         quaternion.slerp(state2.rotation, alpha);
         this.rotation.copy(quaternion);
 
-        var dolly = (alpha * state1.dolly) + ((1 - alpha) * state2.dolly);
+        var dolly = ((1 - alpha) * state1.dolly) + (alpha * state2.dolly);
         this.dolly = dolly;
 
         this.update();
